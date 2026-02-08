@@ -505,13 +505,28 @@ def generate_report() -> str:
         drop_40.sort(key=lambda x: -x["drop_pct"])
         if results:
             buf.write("\n\n")
-        buf.write("**回撤超过25%的股票一览**\n\n")
-        buf.write("| 股票 | 当前价 | 52周高点 | 回撤 |\n")
-        buf.write("| --- | ---: | ---: | ---: |\n")
+        buf.write("回撤超过25%的股票一览\n\n")
+        # 计算名字列的显示宽度（中文算2，英文算1）
+        def display_width(s: str) -> int:
+            w = 0
+            for c in s:
+                w += 2 if '\u4e00' <= c <= '\u9fff' or '\uff00' <= c <= '\uffef' or '\u3000' <= c <= '\u303f' else 1
+            return w
+
+        col_w = 22  # 名字列目标显示宽度
+        header_pad = " " * (col_w - display_width("股票"))
+        buf.write(f"  股票{header_pad} {'当前价':>10s} {'52周高点':>10s} {'回撤':>8s}\n")
+        buf.write(f"  {'─' * (col_w // 2)}  {'─' * 10} {'─' * 10} {'─' * 8}\n")
         for d in drop_40:
             cur = get_currency_symbol(d["market"])
             name_link = make_link(d["name"], d)
-            buf.write(f"| {name_link} | {cur}{d['current_price']} | {cur}{d['high_52w']} | {d['drop_pct']}% |\n")
+            # 补齐：目标宽度 - 显示名宽度 = 需要额外补的空格（链接部分不显示）
+            name_dw = display_width(d["name"])
+            pad = " " * (col_w - name_dw + len(name_link) - len(name_link))
+            # 链接字符串比显示名长，需要减少format的宽度
+            extra = len(name_link) - name_dw
+            total_pad = col_w + extra
+            buf.write(f"  {name_link:<{total_pad}s} {cur}{d['current_price']:>8.2f} {cur}{d['high_52w']:>8.2f} {d['drop_pct']:>7.1f}%\n")
 
     return buf.getvalue()
 
