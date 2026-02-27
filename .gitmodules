@@ -1,0 +1,3 @@
+[submodule "stockmonitor"]
+	path = stockmonitor
+	url = https://github.com/shaishailiu/stockmonitor.git

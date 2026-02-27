@@ -1,0 +1,12 @@
+{
+  "name": "招商银行",
+  "code": "600036",
+  "current_price": 39.45,
+  "yesterday_close": 39.71,
+  "open": 39.7,
+  "high": 39.95,
+  "low": 39.31,
+  "volume": 478803.0,
+  "timestamp": "2026-02-06 12:15:11",
+  "success": true
+}
