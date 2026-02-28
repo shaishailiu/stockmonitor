@@ -56473,5 +56473,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"TSLA",
+    "open":402.94,
+    "high":407.12,
+    "low":398.11,
+    "close":402.51,
+    "volume":56890097.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

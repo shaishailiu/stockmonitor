@@ -1,89 +1,849 @@
 {
   "stocks": [
-    {"name": "AAPL（苹果）",      "market": "us",     "symbol": "105.AAPL"},
-    {"name": "MSFT（微软）",      "market": "us",     "symbol": "105.MSFT"},
-    {"name": "GOOGL（谷歌）",     "market": "us",     "symbol": "105.GOOGL"},
-    {"name": "AMZN（亚马逊）",    "market": "us",     "symbol": "105.AMZN"},
-    {"name": "NVDA（英伟达）",    "market": "us",     "symbol": "105.NVDA"},
-    {"name": "META（Meta）",      "market": "us",     "symbol": "105.META"},
-    {"name": "TSLA（特斯拉）",    "market": "us",     "symbol": "105.TSLA"},
-    {"name": "AMD（AMD）",        "market": "us",     "symbol": "105.AMD"},
-    {"name": "AVGO（博通）",      "market": "us",     "symbol": "105.AVGO"},
-    {"name": "TSM（台积电）",     "market": "us",     "symbol": "106.TSM"},
-    {"name": "ARM（ARM）",        "market": "us",     "symbol": "105.ARM"},
-    {"name": "QCOM（高通）",      "market": "us",     "symbol": "105.QCOM"},
-    {"name": "600519（贵州茅台）", "market": "a",      "symbol": "600519"},
-    {"name": "000858（五粮液）",   "market": "a",      "symbol": "000858"},
-    {"name": "600887（伊利股份）", "market": "a",      "symbol": "600887"},
-    {"name": "000651（格力电器）", "market": "a",      "symbol": "000651"},
-    {"name": "000333（美的集团）", "market": "a",      "symbol": "000333"},
-    {"name": "300750（宁德时代）", "market": "a",      "symbol": "300750"},
-    {"name": "002466（天齐锂业）", "market": "a",      "symbol": "002466"},
-    {"name": "002460（赣锋锂业）", "market": "a",      "symbol": "002460"},
-    {"name": "002594（比亚迪）",   "market": "a",      "symbol": "002594"},
-    {"name": "601012（隆基绿能）", "market": "a",      "symbol": "601012"},
-    {"name": "600438（通威股份）", "market": "a",      "symbol": "600438"},
-    {"name": "300274（阳光电源）", "market": "a",      "symbol": "300274"},
-    {"name": "600011（华能国际）", "market": "a",      "symbol": "600011"},
-    {"name": "600900（长江电力）", "market": "a",      "symbol": "600900"},
-    {"name": "600036（招商银行）", "market": "a",      "symbol": "600036"},
-    {"name": "601318（中国平安）", "market": "a",      "symbol": "601318"},
-    {"name": "600030（中信证券）", "market": "a",      "symbol": "600030"},
-    {"name": "601166（兴业银行）", "market": "a",      "symbol": "601166"},
-    {"name": "002415（海康威视）", "market": "a",      "symbol": "002415"},
-    {"name": "603501（韦尔股份）", "market": "a",      "symbol": "603501"},
-    {"name": "600276（恒瑞医药）", "market": "a",      "symbol": "600276"},
-    {"name": "300760（迈瑞医疗）", "market": "a",      "symbol": "300760"},
-    {"name": "000538（云南白药）", "market": "a",      "symbol": "000538"},
-    {"name": "002602（世纪华通）", "market": "a",      "symbol": "002602"},
-    {"name": "002714（牧原股份）", "market": "a",      "symbol": "002714"},
-    {"name": "300498（温氏股份）", "market": "a",      "symbol": "300498"},
-    {"name": "300059（东方财富）", "market": "a",      "symbol": "300059"},
-    {"name": "600690（海尔智家）", "market": "a",      "symbol": "600690"},
-    {"name": "600760（中航沈飞）", "market": "a",      "symbol": "600760"},
-    {"name": "002179（中航光电）", "market": "a",      "symbol": "002179"},
-    {"name": "002371（北方华创）", "market": "a",      "symbol": "002371"},
-    {"name": "000002（万科A）",    "market": "a",      "symbol": "000002"},
-    {"name": "600048（保利发展）", "market": "a",      "symbol": "600048"},
-    {"name": "600019（宝钢股份）", "market": "a",      "symbol": "600019"},
-    {"name": "601899（紫金矿业）", "market": "a",      "symbol": "601899"},
-    {"name": "601088（中国神华）", "market": "a",      "symbol": "601088"},
-    {"name": "601888（中国中免）", "market": "a",      "symbol": "601888"},
-    {"name": "002352（顺丰控股）", "market": "a",      "symbol": "002352"},
-    {"name": "688111（金山办公）", "market": "a",      "symbol": "688111"},
-    {"name": "603288（海天味业）", "market": "a",      "symbol": "603288"},
-    {"name": "600585（海螺水泥）", "market": "a",      "symbol": "600585"},
-    {"name": "600938（中国海油）", "market": "a",      "symbol": "600938"},
-    {"name": "300124（汇川技术）", "market": "a",      "symbol": "300124"},
-    {"name": "00700（腾讯）",      "market": "hk",     "symbol": "00700"},
-    {"name": "09988（阿里巴巴）",  "market": "hk",     "symbol": "09988"},
-    {"name": "09888（百度）",      "market": "hk",     "symbol": "09888"},
-    {"name": "09618（京东）",      "market": "hk",     "symbol": "09618"},
-    {"name": "03690（美团）",      "market": "hk",     "symbol": "03690"},
-    {"name": "09999（网易）",      "market": "hk",     "symbol": "09999"},
-    {"name": "01024（快手）",      "market": "hk",     "symbol": "01024"},
-    {"name": "01810（小米）",      "market": "hk",     "symbol": "01810"},
-    {"name": "00981（中芯国际）",  "market": "hk",     "symbol": "00981"},
-    {"name": "09866（蔚来）",      "market": "hk",     "symbol": "09866"},
-    {"name": "09868（小鹏汽车）",  "market": "hk",     "symbol": "09868"},
-    {"name": "02015（理想汽车）",  "market": "hk",     "symbol": "02015"},
-    {"name": "09626（哔哩哔哩）",  "market": "hk",     "symbol": "09626"},
-    {"name": "01211（比亚迪）",    "market": "hk",     "symbol": "01211"},
-    {"name": "02020（安踏体育）",  "market": "hk",     "symbol": "02020"},
-    {"name": "06618（京东健康）",  "market": "hk",     "symbol": "06618"},
-    {"name": "09961（携程集团）",  "market": "hk",     "symbol": "09961"},
-    {"name": "02269（药明生物）",  "market": "hk",     "symbol": "02269"},
-    {"name": "09901（新东方在线）","market": "hk",     "symbol": "09901"},
-    {"name": "600941（中国移动）", "market": "a",      "symbol": "600941"},
-    {"name": "601398（工商银行）", "market": "a",      "symbol": "601398"},
-    {"name": "00291（华润啤酒）",  "market": "hk",     "symbol": "00291"},
-    {"name": "02331（李宁）",      "market": "hk",     "symbol": "02331"},
-    {"name": "01347（华虹半导体）","market": "hk",     "symbol": "01347"},
-    {"name": "02380（中国电力）",  "market": "hk",     "symbol": "02380"},
-    {"name": "BEKE（贝壳）",       "market": "us",     "symbol": "106.BEKE"},
-    {"name": "PDD（拼多多）",      "market": "us",     "symbol": "105.PDD"},
-    {"name": "FUTU（富途）",       "market": "us",     "symbol": "105.FUTU"},
-    {"name": "TME（腾讯音乐）",    "market": "us",     "symbol": "106.TME"},
-    {"name": "BTC/USD",            "market": "crypto", "symbol": "BTC"}
+    {
+      "name": "AAPL（苹果）",
+      "market": "us",
+      "symbol": "105.AAPL"
+    },
+    {
+      "name": "MSFT（微软）",
+      "market": "us",
+      "symbol": "105.MSFT"
+    },
+    {
+      "name": "GOOGL（谷歌）",
+      "market": "us",
+      "symbol": "105.GOOGL"
+    },
+    {
+      "name": "AMZN（亚马逊）",
+      "market": "us",
+      "symbol": "105.AMZN"
+    },
+    {
+      "name": "NVDA（英伟达）",
+      "market": "us",
+      "symbol": "105.NVDA"
+    },
+    {
+      "name": "META（Meta）",
+      "market": "us",
+      "symbol": "105.META"
+    },
+    {
+      "name": "TSLA（特斯拉）",
+      "market": "us",
+      "symbol": "105.TSLA"
+    },
+    {
+      "name": "AMD（AMD）",
+      "market": "us",
+      "symbol": "105.AMD"
+    },
+    {
+      "name": "AVGO（博通）",
+      "market": "us",
+      "symbol": "105.AVGO"
+    },
+    {
+      "name": "TSM（台积电）",
+      "market": "us",
+      "symbol": "106.TSM"
+    },
+    {
+      "name": "ARM（ARM）",
+      "market": "us",
+      "symbol": "105.ARM"
+    },
+    {
+      "name": "QCOM（高通）",
+      "market": "us",
+      "symbol": "105.QCOM"
+    },
+    {
+      "name": "600519（贵州茅台）",
+      "market": "a",
+      "symbol": "600519"
+    },
+    {
+      "name": "000858（五粮液）",
+      "market": "a",
+      "symbol": "000858"
+    },
+    {
+      "name": "600887（伊利股份）",
+      "market": "a",
+      "symbol": "600887"
+    },
+    {
+      "name": "000651（格力电器）",
+      "market": "a",
+      "symbol": "000651"
+    },
+    {
+      "name": "000333（美的集团）",
+      "market": "a",
+      "symbol": "000333"
+    },
+    {
+      "name": "300750（宁德时代）",
+      "market": "a",
+      "symbol": "300750"
+    },
+    {
+      "name": "002466（天齐锂业）",
+      "market": "a",
+      "symbol": "002466"
+    },
+    {
+      "name": "002460（赣锋锂业）",
+      "market": "a",
+      "symbol": "002460"
+    },
+    {
+      "name": "002594（比亚迪）",
+      "market": "a",
+      "symbol": "002594"
+    },
+    {
+      "name": "601012（隆基绿能）",
+      "market": "a",
+      "symbol": "601012"
+    },
+    {
+      "name": "600438（通威股份）",
+      "market": "a",
+      "symbol": "600438"
+    },
+    {
+      "name": "300274（阳光电源）",
+      "market": "a",
+      "symbol": "300274"
+    },
+    {
+      "name": "600011（华能国际）",
+      "market": "a",
+      "symbol": "600011"
+    },
+    {
+      "name": "600900（长江电力）",
+      "market": "a",
+      "symbol": "600900"
+    },
+    {
+      "name": "600036（招商银行）",
+      "market": "a",
+      "symbol": "600036"
+    },
+    {
+      "name": "601318（中国平安）",
+      "market": "a",
+      "symbol": "601318"
+    },
+    {
+      "name": "600030（中信证券）",
+      "market": "a",
+      "symbol": "600030"
+    },
+    {
+      "name": "601166（兴业银行）",
+      "market": "a",
+      "symbol": "601166"
+    },
+    {
+      "name": "002415（海康威视）",
+      "market": "a",
+      "symbol": "002415"
+    },
+    {
+      "name": "603501（韦尔股份）",
+      "market": "a",
+      "symbol": "603501"
+    },
+    {
+      "name": "600276（恒瑞医药）",
+      "market": "a",
+      "symbol": "600276"
+    },
+    {
+      "name": "300760（迈瑞医疗）",
+      "market": "a",
+      "symbol": "300760"
+    },
+    {
+      "name": "000538（云南白药）",
+      "market": "a",
+      "symbol": "000538"
+    },
+    {
+      "name": "002602（世纪华通）",
+      "market": "a",
+      "symbol": "002602"
+    },
+    {
+      "name": "002714（牧原股份）",
+      "market": "a",
+      "symbol": "002714"
+    },
+    {
+      "name": "300498（温氏股份）",
+      "market": "a",
+      "symbol": "300498"
+    },
+    {
+      "name": "300059（东方财富）",
+      "market": "a",
+      "symbol": "300059"
+    },
+    {
+      "name": "600690（海尔智家）",
+      "market": "a",
+      "symbol": "600690"
+    },
+    {
+      "name": "600760（中航沈飞）",
+      "market": "a",
+      "symbol": "600760"
+    },
+    {
+      "name": "002179（中航光电）",
+      "market": "a",
+      "symbol": "002179"
+    },
+    {
+      "name": "002371（北方华创）",
+      "market": "a",
+      "symbol": "002371"
+    },
+    {
+      "name": "000002（万科A）",
+      "market": "a",
+      "symbol": "000002"
+    },
+    {
+      "name": "600048（保利发展）",
+      "market": "a",
+      "symbol": "600048"
+    },
+    {
+      "name": "600019（宝钢股份）",
+      "market": "a",
+      "symbol": "600019"
+    },
+    {
+      "name": "601899（紫金矿业）",
+      "market": "a",
+      "symbol": "601899"
+    },
+    {
+      "name": "601088（中国神华）",
+      "market": "a",
+      "symbol": "601088"
+    },
+    {
+      "name": "601888（中国中免）",
+      "market": "a",
+      "symbol": "601888"
+    },
+    {
+      "name": "002352（顺丰控股）",
+      "market": "a",
+      "symbol": "002352"
+    },
+    {
+      "name": "688111（金山办公）",
+      "market": "a",
+      "symbol": "688111"
+    },
+    {
+      "name": "603288（海天味业）",
+      "market": "a",
+      "symbol": "603288"
+    },
+    {
+      "name": "600585（海螺水泥）",
+      "market": "a",
+      "symbol": "600585"
+    },
+    {
+      "name": "600938（中国海油）",
+      "market": "a",
+      "symbol": "600938"
+    },
+    {
+      "name": "300124（汇川技术）",
+      "market": "a",
+      "symbol": "300124"
+    },
+    {
+      "name": "00700（腾讯）",
+      "market": "hk",
+      "symbol": "00700"
+    },
+    {
+      "name": "09988（阿里巴巴）",
+      "market": "hk",
+      "symbol": "09988"
+    },
+    {
+      "name": "09888（百度）",
+      "market": "hk",
+      "symbol": "09888"
+    },
+    {
+      "name": "09618（京东）",
+      "market": "hk",
+      "symbol": "09618"
+    },
+    {
+      "name": "03690（美团）",
+      "market": "hk",
+      "symbol": "03690"
+    },
+    {
+      "name": "09999（网易）",
+      "market": "hk",
+      "symbol": "09999"
+    },
+    {
+      "name": "01024（快手）",
+      "market": "hk",
+      "symbol": "01024"
+    },
+    {
+      "name": "01810（小米）",
+      "market": "hk",
+      "symbol": "01810"
+    },
+    {
+      "name": "00981（中芯国际）",
+      "market": "hk",
+      "symbol": "00981"
+    },
+    {
+      "name": "09866（蔚来）",
+      "market": "hk",
+      "symbol": "09866"
+    },
+    {
+      "name": "09868（小鹏汽车）",
+      "market": "hk",
+      "symbol": "09868"
+    },
+    {
+      "name": "02015（理想汽车）",
+      "market": "hk",
+      "symbol": "02015"
+    },
+    {
+      "name": "09626（哔哩哔哩）",
+      "market": "hk",
+      "symbol": "09626"
+    },
+    {
+      "name": "01211（比亚迪）",
+      "market": "hk",
+      "symbol": "01211"
+    },
+    {
+      "name": "02020（安踏体育）",
+      "market": "hk",
+      "symbol": "02020"
+    },
+    {
+      "name": "06618（京东健康）",
+      "market": "hk",
+      "symbol": "06618"
+    },
+    {
+      "name": "09961（携程集团）",
+      "market": "hk",
+      "symbol": "09961"
+    },
+    {
+      "name": "02269（药明生物）",
+      "market": "hk",
+      "symbol": "02269"
+    },
+    {
+      "name": "09901（新东方在线）",
+      "market": "hk",
+      "symbol": "09901"
+    },
+    {
+      "name": "600941（中国移动）",
+      "market": "a",
+      "symbol": "600941"
+    },
+    {
+      "name": "601398（工商银行）",
+      "market": "a",
+      "symbol": "601398"
+    },
+    {
+      "name": "00291（华润啤酒）",
+      "market": "hk",
+      "symbol": "00291"
+    },
+    {
+      "name": "02331（李宁）",
+      "market": "hk",
+      "symbol": "02331"
+    },
+    {
+      "name": "01347（华虹半导体）",
+      "market": "hk",
+      "symbol": "01347"
+    },
+    {
+      "name": "02380（中国电力）",
+      "market": "hk",
+      "symbol": "02380"
+    },
+    {
+      "name": "BEKE（贝壳）",
+      "market": "us",
+      "symbol": "106.BEKE"
+    },
+    {
+      "name": "PDD（拼多多）",
+      "market": "us",
+      "symbol": "105.PDD"
+    },
+    {
+      "name": "FUTU（富途）",
+      "market": "us",
+      "symbol": "105.FUTU"
+    },
+    {
+      "name": "TME（腾讯音乐）",
+      "market": "us",
+      "symbol": "106.TME"
+    },
+    {
+      "name": "BTC/USD",
+      "market": "crypto",
+      "symbol": "BTC"
+    },
+    {
+      "name": "06869（长飞光纤光缆）",
+      "market": "hk",
+      "symbol": "06869"
+    },
+    {
+      "name": "00020（商汤－Ｗ）",
+      "market": "hk",
+      "symbol": "00020"
+    },
+    {
+      "name": "02318（中国平安）",
+      "market": "hk",
+      "symbol": "02318"
+    },
+    {
+      "name": "00005（汇丰控股）",
+      "market": "hk",
+      "symbol": "00005"
+    },
+    {
+      "name": "00100（MINIMAX-WP）",
+      "market": "hk",
+      "symbol": "00100"
+    },
+    {
+      "name": "00388（香港交易所）",
+      "market": "hk",
+      "symbol": "00388"
+    },
+    {
+      "name": "00939（建设银行）",
+      "market": "hk",
+      "symbol": "00939"
+    },
+    {
+      "name": "00016（新鸿基地产）",
+      "market": "hk",
+      "symbol": "00016"
+    },
+    {
+      "name": "01299（友邦保险）",
+      "market": "hk",
+      "symbol": "01299"
+    },
+    {
+      "name": "02899（紫金矿业）",
+      "market": "hk",
+      "symbol": "02899"
+    },
+    {
+      "name": "02513（智谱）",
+      "market": "hk",
+      "symbol": "02513"
+    },
+    {
+      "name": "02525（禾赛－Ｗ）",
+      "market": "hk",
+      "symbol": "02525"
+    },
+    {
+      "name": "09992（泡泡玛特）",
+      "market": "hk",
+      "symbol": "09992"
+    },
+    {
+      "name": "03750（宁德时代）",
+      "market": "hk",
+      "symbol": "03750"
+    },
+    {
+      "name": "02026（小马智行－Ｗ）",
+      "market": "hk",
+      "symbol": "02026"
+    },
+    {
+      "name": "01398（工商银行）",
+      "market": "hk",
+      "symbol": "01398"
+    },
+    {
+      "name": "00883（中国海洋石油）",
+      "market": "hk",
+      "symbol": "00883"
+    },
+    {
+      "name": "02628（中国人寿）",
+      "market": "hk",
+      "symbol": "02628"
+    },
+    {
+      "name": "03993（洛阳钼业）",
+      "market": "hk",
+      "symbol": "03993"
+    },
+    {
+      "name": "02865（钧达股份）",
+      "market": "hk",
+      "symbol": "02865"
+    },
+    {
+      "name": "01378（中国宏桥）",
+      "market": "hk",
+      "symbol": "01378"
+    },
+    {
+      "name": "00857（中国石油股份）",
+      "market": "hk",
+      "symbol": "00857"
+    },
+    {
+      "name": "00669（创科实业）",
+      "market": "hk",
+      "symbol": "00669"
+    },
+    {
+      "name": "03988（中国银行）",
+      "market": "hk",
+      "symbol": "03988"
+    },
+    {
+      "name": "06160（百济神州）",
+      "market": "hk",
+      "symbol": "06160"
+    },
+    {
+      "name": "00576（浙江沪杭甬）",
+      "market": "hk",
+      "symbol": "00576"
+    },
+    {
+      "name": "00175（吉利汽车）",
+      "market": "hk",
+      "symbol": "00175"
+    },
+    {
+      "name": "00179（德昌电机控股）",
+      "market": "hk",
+      "symbol": "00179"
+    },
+    {
+      "name": "01801（信达生物）",
+      "market": "hk",
+      "symbol": "01801"
+    },
+    {
+      "name": "00992（联想集团）",
+      "market": "hk",
+      "symbol": "00992"
+    },
+    {
+      "name": "01772（赣锋锂业）",
+      "market": "hk",
+      "symbol": "01772"
+    },
+    {
+      "name": "03896（金山云）",
+      "market": "hk",
+      "symbol": "03896"
+    },
+    {
+      "name": "00656（复星国际）",
+      "market": "hk",
+      "symbol": "00656"
+    },
+    {
+      "name": "00941（中国移动）",
+      "market": "hk",
+      "symbol": "00941"
+    },
+    {
+      "name": "01072（东方电气）",
+      "market": "hk",
+      "symbol": "01072"
+    },
+    {
+      "name": "01093（石药集团）",
+      "market": "hk",
+      "symbol": "01093"
+    },
+    {
+      "name": "09987（百胜中国）",
+      "market": "hk",
+      "symbol": "09987"
+    },
+    {
+      "name": "300308（中际旭创）",
+      "market": "a",
+      "symbol": "300308"
+    },
+    {
+      "name": "300502（新易盛）",
+      "market": "a",
+      "symbol": "300502"
+    },
+    {
+      "name": "600410（华胜天成）",
+      "market": "a",
+      "symbol": "600410"
+    },
+    {
+      "name": "300476（胜宏科技）",
+      "market": "a",
+      "symbol": "300476"
+    },
+    {
+      "name": "300394（天孚通信）",
+      "market": "a",
+      "symbol": "300394"
+    },
+    {
+      "name": "688256（寒武纪）",
+      "market": "a",
+      "symbol": "688256"
+    },
+    {
+      "name": "600111（北方稀土）",
+      "market": "a",
+      "symbol": "600111"
+    },
+    {
+      "name": "600010（包钢股份）",
+      "market": "a",
+      "symbol": "600010"
+    },
+    {
+      "name": "300442（润泽科技）",
+      "market": "a",
+      "symbol": "300442"
+    },
+    {
+      "name": "300017（网宿科技）",
+      "market": "a",
+      "symbol": "300017"
+    },
+    {
+      "name": "002131（利欧股份）",
+      "market": "a",
+      "symbol": "002131"
+    },
+    {
+      "name": "688041（海光信息）",
+      "market": "a",
+      "symbol": "688041"
+    },
+    {
+      "name": "002463（沪电股份）",
+      "market": "a",
+      "symbol": "002463"
+    },
+    {
+      "name": "601138（工业富联）",
+      "market": "a",
+      "symbol": "601138"
+    },
+    {
+      "name": "000547（航天发展）",
+      "market": "a",
+      "symbol": "000547"
+    },
+    {
+      "name": "600487（亨通光电）",
+      "market": "a",
+      "symbol": "600487"
+    },
+    {
+      "name": "000988（华工科技）",
+      "market": "a",
+      "symbol": "000988"
+    },
+    {
+      "name": "300395（菲利华）",
+      "market": "a",
+      "symbol": "300395"
+    },
+    {
+      "name": "603993（洛阳钼业）",
+      "market": "a",
+      "symbol": "603993"
+    },
+    {
+      "name": "600522（中天科技）",
+      "market": "a",
+      "symbol": "600522"
+    },
+    {
+      "name": "002428（云南锗业）",
+      "market": "a",
+      "symbol": "002428"
+    },
+    {
+      "name": "300418（昆仑万维）",
+      "market": "a",
+      "symbol": "300418"
+    },
+    {
+      "name": "600089（特变电工）",
+      "market": "a",
+      "symbol": "600089"
+    },
+    {
+      "name": "300058（蓝色光标）",
+      "market": "a",
+      "symbol": "300058"
+    },
+    {
+      "name": "600498（烽火通信）",
+      "market": "a",
+      "symbol": "600498"
+    },
+    {
+      "name": "002202（金风科技）",
+      "market": "a",
+      "symbol": "002202"
+    },
+    {
+      "name": "300136（信维通信）",
+      "market": "a",
+      "symbol": "300136"
+    },
+    {
+      "name": "002506（协鑫集成）",
+      "market": "a",
+      "symbol": "002506"
+    },
+    {
+      "name": "002195（岩山科技）",
+      "market": "a",
+      "symbol": "002195"
+    },
+    {
+      "name": "002384（东山精密）",
+      "market": "a",
+      "symbol": "002384"
+    },
+    {
+      "name": "600589（大位科技）",
+      "market": "a",
+      "symbol": "600589"
+    },
+    {
+      "name": "603986（兆易创新）",
+      "market": "a",
+      "symbol": "603986"
+    },
+    {
+      "name": "688521（芯原股份）",
+      "market": "a",
+      "symbol": "688521"
+    },
+    {
+      "name": "600157（永泰能源）",
+      "market": "a",
+      "symbol": "600157"
+    },
+    {
+      "name": "002475（立讯精密）",
+      "market": "a",
+      "symbol": "002475"
+    },
+    {
+      "name": "000657（中钨高新）",
+      "market": "a",
+      "symbol": "000657"
+    },
+    {
+      "name": "002156（通富微电）",
+      "market": "a",
+      "symbol": "002156"
+    },
+    {
+      "name": "600549（厦门钨业）",
+      "market": "a",
+      "symbol": "600549"
+    },
+    {
+      "name": "002008（大族激光）",
+      "market": "a",
+      "symbol": "002008"
+    },
+    {
+      "name": "000592（平潭发展）",
+      "market": "a",
+      "symbol": "000592"
+    },
+    {
+      "name": "300065（海兰信）",
+      "market": "a",
+      "symbol": "300065"
+    },
+    {
+      "name": "002155（湖南黄金）",
+      "market": "a",
+      "symbol": "002155"
+    },
+    {
+      "name": "600879（航天电子）",
+      "market": "a",
+      "symbol": "600879"
+    },
+    {
+      "name": "600875（东方电气）",
+      "market": "a",
+      "symbol": "600875"
+    },
+    {
+      "name": "688343（云天励飞）",
+      "market": "a",
+      "symbol": "688343"
+    },
+    {
+      "name": "000630（铜陵有色）",
+      "market": "a",
+      "symbol": "000630"
+    },
+    {
+      "name": "600118（中国卫星）",
+      "market": "a",
+      "symbol": "600118"
+    }
   ]
 }

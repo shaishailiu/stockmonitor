@@ -142678,5 +142678,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"MSFT",
+    "open":390.88,
+    "high":396.82,
+    "low":389.88,
+    "close":392.74,
+    "volume":51367176.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

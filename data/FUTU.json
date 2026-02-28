@@ -26293,5 +26293,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"FUTU",
+    "open":150.0,
+    "high":150.88,
+    "low":147.0,
+    "close":148.84,
+    "volume":948672.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

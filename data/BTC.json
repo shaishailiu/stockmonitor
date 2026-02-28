@@ -5773,5 +5773,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":1348944333913.3764648438
+  },
+  {
+    "date":"2026-02-28",
+    "symbol":"BTC",
+    "open":null,
+    "high":null,
+    "low":null,
+    "close":65883.9909623532,
+    "volume":43031961580.2116470337,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":1317715385672.9201660156
   }
 ]

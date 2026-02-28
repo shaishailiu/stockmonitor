@@ -27163,5 +27163,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"TME",
+    "open":14.5,
+    "high":14.8,
+    "low":14.36,
+    "close":14.6,
+    "volume":4741592.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

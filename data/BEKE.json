@@ -20863,5 +20863,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"BEKE",
+    "open":16.35,
+    "high":16.59,
+    "low":16.35,
+    "close":16.45,
+    "volume":2380307.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

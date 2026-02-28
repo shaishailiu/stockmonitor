@@ -37993,5 +37993,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"AVGO",
+    "open":310.7,
+    "high":320.0,
+    "low":310.0,
+    "close":319.55,
+    "volume":28004119.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

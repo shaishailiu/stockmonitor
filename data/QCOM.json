@@ -120748,5 +120748,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-02-27",
+    "symbol":"QCOM",
+    "open":142.855,
+    "high":143.91,
+    "low":141.35,
+    "close":142.36,
+    "volume":12439729.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]
