@@ -43816,7 +43816,7 @@
   },
   {
     "date":"2026-02-09",
-    "symbol":"603288",
+    "symbol":603288,
     "open":37.0,
     "high":37.46,
     "low":36.85,
@@ -43831,7 +43831,7 @@
   },
   {
     "date":"2026-02-10",
-    "symbol":"603288",
+    "symbol":603288,
     "open":37.35,
     "high":37.35,
     "low":36.6,
@@ -43846,7 +43846,7 @@
   },
   {
     "date":"2026-02-11",
-    "symbol":"603288",
+    "symbol":603288,
     "open":36.6,
     "high":36.62,
     "low":36.3,
@@ -43861,7 +43861,7 @@
   },
   {
     "date":"2026-02-12",
-    "symbol":"603288",
+    "symbol":603288,
     "open":36.5,
     "high":36.5,
     "low":35.8,
@@ -43876,7 +43876,7 @@
   },
   {
     "date":"2026-02-13",
-    "symbol":"603288",
+    "symbol":603288,
     "open":35.92,
     "high":36.07,
     "low":35.61,
@@ -43891,7 +43891,7 @@
   },
   {
     "date":"2026-02-24",
-    "symbol":"603288",
+    "symbol":603288,
     "open":35.95,
     "high":36.36,
     "low":35.92,
@@ -43906,7 +43906,7 @@
   },
   {
     "date":"2026-02-25",
-    "symbol":"603288",
+    "symbol":603288,
     "open":36.21,
     "high":36.28,
     "low":35.85,
@@ -43921,7 +43921,7 @@
   },
   {
     "date":"2026-02-26",
-    "symbol":"603288",
+    "symbol":603288,
     "open":35.92,
     "high":35.94,
     "low":35.53,
@@ -43936,7 +43936,7 @@
   },
   {
     "date":"2026-02-27",
-    "symbol":"603288",
+    "symbol":603288,
     "open":35.98,
     "high":36.16,
     "low":35.84,
@@ -43947,6 +43947,81 @@
     "change_pct":null,
     "change":null,
     "turnover_rate":0.0021337467,
+    "market_cap":null
+  },
+  {
+    "date":"2026-03-02",
+    "symbol":603288,
+    "open":35.64,
+    "high":35.76,
+    "low":35.25,
+    "close":35.65,
+    "volume":14483248.0,
+    "amount":514275920.0,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":0.0026046194,
+    "market_cap":null
+  },
+  {
+    "date":"2026-03-03",
+    "symbol":603288,
+    "open":35.64,
+    "high":36.62,
+    "low":35.5,
+    "close":36.06,
+    "volume":22036989.0,
+    "amount":795851828.0,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":0.0039630592,
+    "market_cap":null
+  },
+  {
+    "date":"2026-03-04",
+    "symbol":603288,
+    "open":35.93,
+    "high":36.09,
+    "low":35.35,
+    "close":35.5,
+    "volume":14870720.0,
+    "amount":529923504.0,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":0.0026743011,
+    "market_cap":null
+  },
+  {
+    "date":"2026-03-05",
+    "symbol":603288,
+    "open":35.6,
+    "high":36.36,
+    "low":35.6,
+    "close":35.98,
+    "volume":12852559.0,
+    "amount":463840429.0,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":0.0023113617,
+    "market_cap":null
+  },
+  {
+    "date":"2026-03-06",
+    "symbol":"603288",
+    "open":36.0,
+    "high":37.08,
+    "low":35.9,
+    "close":37.02,
+    "volume":23079600.0,
+    "amount":847356521.0,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":0.0041505589,
     "market_cap":null
   }
 ]
