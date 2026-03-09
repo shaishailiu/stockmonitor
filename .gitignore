@@ -4,3 +4,5 @@ __pycache__/
 RES.md
 data.md
 .codebuddy/
+config/
+memory/
