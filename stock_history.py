@@ -61,7 +61,7 @@ def _normalize(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
 def _default_date_range():
     today = datetime.now()
     end_date = today.strftime("%Y%m%d")
-    start_date = (today - timedelta(weeks=52)).strftime("%Y%m%d")
+    start_date = (today - timedelta(weeks=104)).strftime("%Y%m%d")
     return start_date, end_date
 
 
@@ -266,6 +266,9 @@ def save_to_json(df: pd.DataFrame, filename: str):
     df.to_json(filename, orient="records", force_ascii=False, indent=2)
 
 
+
+
+
 def fetch_and_save(name: str, fetch_fns: list, filename: str, market: str = "", **kwargs) -> dict:
     """通用的获取并保存逻辑，支持增量更新，支持多数据源 fallback。
 
@@ -391,6 +394,7 @@ def run_update() -> str:
         lines.append(f"\n❌ 更新失败（{len(failed)}）：")
         for r in failed:
             lines.append(f"  {r['name']}：{r['detail']}")
+
 
     report = "\n".join(lines)
     print(report)

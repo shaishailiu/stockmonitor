@@ -4,9 +4,12 @@ import json
 import os
 import io
 from datetime import datetime, timedelta
-
 CONFIG_FILE = "config.json"
 DATA_DIR = "data"
+PE_DATA_DIR = "pedata"
+
+# 日期模糊匹配允许的最大偏移天数（查询 PE 时使用）
+PE_DATE_TOLERANCE_DAYS = 3
 
 # ── 触发条件：回撤 + 至少一个技术指标确认 ──
 # (最大ratio, 日线RSI上限, 周线RSI上限, emoji, 预警名)
@@ -29,6 +32,58 @@ def get_data_path(item: dict) -> str:
     else:
         name = f"{symbol}.json"
     return os.path.join(DATA_DIR, name)
+
+
+def get_pe_path(item: dict) -> str:
+    """获取 PE 数据文件路径（pedata 目录下）。"""
+    symbol = item["symbol"]
+    if item["market"] == "us":
+        name = f"{symbol.split('.')[-1]}.json"
+    else:
+        name = f"{symbol}.json"
+    return os.path.join(PE_DATA_DIR, name)
+
+
+def _load_pe_data(pe_path: str) -> dict[str, float]:
+    """加载 PE 数据文件，返回 {date: pe} 字典。"""
+    if not os.path.exists(pe_path):
+        return {}
+    try:
+        with open(pe_path, "r", encoding="utf-8") as f:
+            records = json.load(f)
+        return {r["date"]: r["pe"] for r in records if "date" in r and "pe" in r}
+    except Exception:
+        return {}
+
+
+def lookup_pe(pe_map: dict[str, float], date: str) -> float | None:
+    """从 PE 字典中查询指定日期的 PE 值，支持 ±3 天模糊匹配。"""
+    if not date or not pe_map:
+        return None
+
+    # 精确匹配
+    if date in pe_map:
+        val = pe_map[date]
+        return round(float(val), 2) if pd.notna(val) else None
+
+    # 模糊匹配：前后 PE_DATE_TOLERANCE_DAYS 天内最近的日期
+    target = datetime.strptime(date, "%Y-%m-%d")
+    best_val = None
+    best_diff = timedelta(days=PE_DATE_TOLERANCE_DAYS + 1)
+
+    for d_str, pe_val in pe_map.items():
+        try:
+            d = datetime.strptime(d_str, "%Y-%m-%d")
+            diff = abs(d - target)
+            if diff <= timedelta(days=PE_DATE_TOLERANCE_DAYS) and diff < best_diff:
+                best_diff = diff
+                best_val = pe_val
+        except (ValueError, TypeError):
+            continue
+
+    if best_val is not None and pd.notna(best_val):
+        return round(float(best_val), 2)
+    return None
 
 
 # ──────────────────────────────────────
@@ -178,6 +233,10 @@ def get_currency_symbol(market: str) -> str:
     return ""
 
 
+
+
+
+
 # 东财交易所编号 -> Google Finance 交易所代码
 _US_EXCHANGE_MAP = {
     "105": "NASDAQ",
@@ -221,6 +280,70 @@ def make_link(name: str, item_or_info: dict) -> str:
 
 
 # ──────────────────────────────────────
+#  阶段性高点识别
+# ──────────────────────────────────────
+
+# 有效反弹阈值（保留供其他函数使用）
+SIGNIFICANT_REBOUND = 0.20
+
+# 显著低点的最小涨幅阈值：从低点到高点涨幅需达到此比例才算"显著低点"
+MIN_RISE_FOR_TROUGH = 0.30
+
+
+def find_cycle_high(df: pd.DataFrame) -> dict:
+    """找到当前下跌周期的显著高点和前一轮低谷。
+
+    算法（简化版）：
+    1. 在全部数据中找到全局最高点作为"显著高点"
+    2. 从全局最高点往前（更早时间）扫描，找到最低价作为候选低谷
+    3. 验证：从低谷到高点的涨幅需 >= MIN_RISE_FOR_TROUGH，否则低谷无效
+
+    Returns:
+        dict with keys:
+        - peak_price: 本轮下跌的起始高点价格
+        - peak_date: 高点日期
+        - trough_price: 前一次低谷价格（可能为 None）
+        - trough_date: 低谷日期（可能为 None）
+    """
+    highs = df["high"].values if "high" in df.columns else df["close"].values
+    lows = df["low"].values if "low" in df.columns else df["close"].values
+    dates = df["date"].values
+
+    if len(highs) == 0:
+        return {"peak_price": None, "peak_date": None,
+                "trough_price": None, "trough_date": None}
+
+    # 1. 找全局最高点 → 显著高点
+    peak_idx = int(np.argmax(highs))
+    peak_price = float(highs[peak_idx])
+
+    # 2. 从高点往前找最低点 → 候选显著低点
+    prev_trough_price = None
+    prev_trough_date = None
+
+    if peak_idx > 0:
+        segment_lows = lows[:peak_idx]
+        min_idx = int(np.argmin(segment_lows))
+        candidate_trough = float(segment_lows[min_idx])
+
+        # 3. 验证涨幅是否足够大
+        if candidate_trough > 0:
+            rise = (peak_price - candidate_trough) / candidate_trough
+            if rise >= MIN_RISE_FOR_TROUGH:
+                prev_trough_price = candidate_trough
+                prev_trough_date = pd.Timestamp(dates[min_idx]).strftime("%Y-%m-%d")
+
+    peak_date = pd.Timestamp(dates[peak_idx]).strftime("%Y-%m-%d")
+
+    return {
+        "peak_price": peak_price,
+        "peak_date": peak_date,
+        "trough_price": prev_trough_price,
+        "trough_date": prev_trough_date,
+    }
+
+
+# ──────────────────────────────────────
 #  分析主逻辑
 # ──────────────────────────────────────
 
@@ -236,15 +359,10 @@ def analyze(item: dict) -> dict | None:
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values("date").reset_index(drop=True)
 
-    cutoff = datetime.now() - timedelta(weeks=52)
-    df_52w = df[df["date"] >= cutoff].copy()
+    # 技术指标仍用52周数据（保持时效性）
+    cutoff_52w = datetime.now() - timedelta(weeks=52)
+    df_52w = df[df["date"] >= cutoff_52w].copy()
     if df_52w.empty:
-        return None
-
-    high_52w = df_52w["high"].max() if "high" in df_52w.columns else df_52w["close"].max()
-    if pd.isna(high_52w) or high_52w <= 0:
-        high_52w = df_52w["close"].max()
-    if pd.isna(high_52w) or high_52w <= 0:
         return None
 
     latest = df_52w.iloc[-1]
@@ -253,10 +371,32 @@ def analyze(item: dict) -> dict | None:
     if pd.isna(current_price) or current_price <= 0:
         return None
 
-    ratio = current_price / high_52w
+    # 用全量数据（最多3年）找阶段性高点
+    cutoff_full = datetime.now() - timedelta(weeks=156)
+    df_full = df[df["date"] >= cutoff_full].copy()
+    if df_full.empty:
+        df_full = df_52w
+
+    cycle_info = find_cycle_high(df_full)
+    stage_high = cycle_info["peak_price"]
+
+    if stage_high is None or stage_high <= 0:
+        # 退化为52周高点
+        stage_high = df_52w["high"].max() if "high" in df_52w.columns else df_52w["close"].max()
+    if pd.isna(stage_high) or stage_high <= 0:
+        return None
+
+    # ── 从本地 PE 数据文件获取 PE 值 ──
+    pe_path = get_pe_path(item)
+    pe_map = _load_pe_data(pe_path)
+    peak_pe = lookup_pe(pe_map, cycle_info["peak_date"])
+    trough_pe = lookup_pe(pe_map, cycle_info["trough_date"])
+    current_pe = lookup_pe(pe_map, latest_date)
+
+    ratio = current_price / stage_high
     drop_pct = round((1 - ratio) * 100, 1)
 
-    # ── 计算所有技术指标 ──
+    # ── 计算所有技术指标（基于52周数据） ──
     rsi_14 = calc_rsi(df_52w["close"], 14)
     weekly_rsi = calc_weekly_rsi(df_52w, 14)
     dif, dea, macd_hist = calc_macd(df_52w["close"])
@@ -386,7 +526,13 @@ def analyze(item: dict) -> dict | None:
         "symbol": item["symbol"],
         "latest_date": latest_date,
         "current_price": round(current_price, 2),
-        "high_52w": round(high_52w, 2),
+        "high_52w": round(stage_high, 2),
+        "peak_date": cycle_info["peak_date"],
+        "trough_price": round(cycle_info["trough_price"], 2) if cycle_info["trough_price"] is not None else None,
+        "trough_date": cycle_info["trough_date"],
+        "peak_pe": peak_pe,
+        "trough_pe": trough_pe,
+        "current_pe": current_pe,
         "ratio": round(ratio, 4),
         "drop_pct": drop_pct,
         "emoji": emoji,
@@ -432,8 +578,15 @@ def format_card(s: dict) -> str:
 
     # 价格信息
     buf.write(f"📉 价格信息：\n")
-    buf.write(f"  · 当前价：{currency}{s['current_price']}\n")
-    buf.write(f"  · 52周高点：{currency}{s['high_52w']}\n")
+    current_pe_str = f" | PE {s['current_pe']}" if s.get('current_pe') is not None else ""
+    buf.write(f"  · 当前价：{currency}{s['current_price']}{current_pe_str}\n")
+    peak_date_str = f"（{s['peak_date']}）" if s.get('peak_date') else ""
+    peak_pe_str = f" | PE {s['peak_pe']}" if s.get('peak_pe') is not None else ""
+    buf.write(f"  · 本轮高点：{currency}{s['high_52w']}{peak_date_str}{peak_pe_str}\n")
+    if s.get('trough_price') is not None:
+        trough_date_str = f"（{s['trough_date']}）" if s.get('trough_date') else ""
+        trough_pe_str = f" | PE {s['trough_pe']}" if s.get('trough_pe') is not None else ""
+        buf.write(f"  · 前次低谷：{currency}{s['trough_price']}{trough_date_str}{trough_pe_str}\n")
     buf.write(f"  · 回撤幅度：{s['drop_pct']}%\n")
 
     # 技术指标
@@ -515,7 +668,7 @@ def generate_report() -> str:
 
         col_w = 22  # 名字列目标显示宽度
         header_pad = " " * (col_w - display_width("股票"))
-        buf.write(f"  股票{header_pad} {'当前价':>10s} {'52周高点':>10s} {'回撤':>8s}\n")
+        buf.write(f"  股票{header_pad} {'当前价':>10s} {'阶段高点':>10s} {'回撤':>8s}\n")
         buf.write(f"  {'─' * (col_w // 2)}  {'─' * 10} {'─' * 10} {'─' * 8}\n")
         for d in drop_40:
             cur = get_currency_symbol(d["market"])
@@ -528,11 +681,18 @@ def generate_report() -> str:
             total_pad = col_w + extra
             buf.write(f"  {name_link:<{total_pad}s} {cur}{d['current_price']:>8.2f} {cur}{d['high_52w']:>8.2f} {d['drop_pct']:>7.1f}%\n")
 
+    if not results and not drop_40:
+        buf.write(f"✅ 当前没有股票触发预警，也没有回撤超过25%的股票。\n")
+        buf.write(f"   监控的股票数量：{len(config)} | 有回撤数据的：{len(all_drops)}\n")
+        if all_drops:
+            max_drop = max(all_drops, key=lambda x: x["drop_pct"])
+            buf.write(f"   当前最大回撤：{max_drop['name']} {max_drop['drop_pct']}%\n")
+
     return buf.getvalue()
 
 
 def calc_drop_info(item: dict) -> dict | None:
-    """计算单只股票的52周回撤基础数据。"""
+    """计算单只股票的阶段性回撤基础数据。"""
     path = get_data_path(item)
     if not os.path.exists(path):
         return None
@@ -544,29 +704,41 @@ def calc_drop_info(item: dict) -> dict | None:
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values("date").reset_index(drop=True)
 
-    cutoff = datetime.now() - timedelta(weeks=52)
-    df_52w = df[df["date"] >= cutoff]
+    # 用全量数据（最多3年）找阶段性高点
+    cutoff_full = datetime.now() - timedelta(weeks=156)
+    df_full = df[df["date"] >= cutoff_full].copy()
+
+    cutoff_52w = datetime.now() - timedelta(weeks=52)
+    df_52w = df[df["date"] >= cutoff_52w]
     if df_52w.empty:
         return None
 
-    high_52w = df_52w["high"].max() if "high" in df_52w.columns else df_52w["close"].max()
-    if pd.isna(high_52w) or high_52w <= 0:
-        high_52w = df_52w["close"].max()
-    if pd.isna(high_52w) or high_52w <= 0:
-        return None
+    if df_full.empty:
+        df_full = df_52w
 
     current_price = df_52w.iloc[-1]["close"]
     if pd.isna(current_price) or current_price <= 0:
         return None
 
-    drop_pct = round((1 - current_price / high_52w) * 100, 1)
+    cycle_info = find_cycle_high(df_full)
+    stage_high = cycle_info["peak_price"]
+
+    if stage_high is None or stage_high <= 0:
+        stage_high = df_52w["high"].max() if "high" in df_52w.columns else df_52w["close"].max()
+    if pd.isna(stage_high) or stage_high <= 0:
+        return None
+
+    drop_pct = round((1 - current_price / stage_high) * 100, 1)
 
     return {
         "name": item["name"],
         "market": item["market"],
         "symbol": item["symbol"],
         "current_price": round(current_price, 2),
-        "high_52w": round(high_52w, 2),
+        "high_52w": round(stage_high, 2),
+        "peak_date": cycle_info["peak_date"],
+        "trough_price": round(cycle_info["trough_price"], 2) if cycle_info["trough_price"] is not None else None,
+        "trough_date": cycle_info["trough_date"],
         "drop_pct": drop_pct,
     }
 
