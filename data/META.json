@@ -14068,5 +14068,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"META",
+    "open":634.78,
+    "high":647.75,
+    "low":626.78,
+    "close":647.39,
+    "volume":13489705.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

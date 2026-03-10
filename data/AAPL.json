@@ -148498,5 +148498,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"AAPL",
+    "open":255.69,
+    "high":261.15,
+    "low":253.6805,
+    "close":259.88,
+    "volume":38218531.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

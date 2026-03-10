@@ -84478,5 +84478,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"NVDA",
+    "open":176.83,
+    "high":182.91,
+    "low":175.56,
+    "close":182.65,
+    "volume":177213547.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

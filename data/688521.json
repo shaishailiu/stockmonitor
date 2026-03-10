@@ -19981,7 +19981,7 @@
   },
   {
     "date":"2026-03-06",
-    "symbol":"688521",
+    "symbol":688521,
     "open":239.5,
     "high":247.88,
     "low":237.44,
@@ -19992,6 +19992,21 @@
     "change_pct":null,
     "change":null,
     "turnover_rate":0.0300223017,
+    "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"688521",
+    "open":220.5,
+    "high":233.99,
+    "low":214.0,
+    "close":230.58,
+    "volume":19529420.0,
+    "amount":4361334689.0,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":0.0371341564,
     "market_cap":null
   }
 ]

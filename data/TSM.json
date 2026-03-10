@@ -86638,5 +86638,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"TSM",
+    "open":335.6,
+    "high":349.4,
+    "low":331.92,
+    "close":348.7,
+    "volume":19182763.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

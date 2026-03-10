@@ -71578,5 +71578,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"GOOGL",
+    "open":294.36,
+    "high":306.8,
+    "low":294.08,
+    "close":306.36,
+    "volume":29312134.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]

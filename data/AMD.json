@@ -42118,5 +42118,20 @@
     "change":null,
     "turnover_rate":null,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-09",
+    "symbol":"AMD",
+    "open":189.36,
+    "high":202.97,
+    "low":189.02,
+    "close":202.68,
+    "volume":38877096.0,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]
