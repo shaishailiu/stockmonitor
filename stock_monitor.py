@@ -5,6 +5,7 @@ import os
 import io
 from datetime import datetime, timedelta
 CONFIG_FILE = "config.json"
+BLOCK_FILE = "block.json"
 DATA_DIR = "data"
 PE_DATA_DIR = "pedata"
 
@@ -23,6 +24,17 @@ ALERT_LEVELS = [
 def load_config():
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         return json.load(f)["stocks"]
+
+
+def load_block_symbols() -> set:
+    """加载 block.json 中的屏蔽股票 symbol 集合。"""
+    if not os.path.exists(BLOCK_FILE):
+        return set()
+    try:
+        with open(BLOCK_FILE, "r", encoding="utf-8") as f:
+            return {s["symbol"] for s in json.load(f).get("stocks", [])}
+    except (json.JSONDecodeError, KeyError):
+        return set()
 
 
 def get_data_path(item: dict) -> str:
@@ -631,10 +643,13 @@ def format_card(s: dict) -> str:
 
 def generate_report() -> str:
     config = load_config()
+    blocked = load_block_symbols()
     results = []
     all_drops = []  # 所有股票的回撤数据
 
     for item in config:
+        if item["symbol"] in blocked:
+            continue
         # 计算基础回撤数据
         drop_info = calc_drop_info(item)
         if drop_info:
