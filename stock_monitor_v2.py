@@ -664,7 +664,7 @@ def generate_report() -> str:
 
     # 触发阈值的卡片
     if results:
-        results.sort(key=lambda x: x["ratio"])
+        results.sort(key=lambda x: -x["score"])
         cards = [format_card(s) for s in results]
         buf.write(("\n" + "─" * 40 + "\n\n").join(cards))
 
