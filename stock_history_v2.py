@@ -347,8 +347,16 @@ def calc_pe_series(quarterly_eps: list[dict], records: list[dict]) -> list[dict]
 
 
 def fetch_full_with_pe(item: dict) -> list[dict]:
-    """层2：akshare 拉历史 K 线 + 东方财富计算 PE，返回完整记录。"""
+    """层2：akshare 拉历史 K 线 + 东方财富计算 PE，返回完整记录。
+    如果 akshare 失败，自动切换到备用数据源（腾讯/新浪/东方财富HTTP）。
+    """
     records = fetch_akshare_kline(item)
+
+    # akshare 失败 → 备用数据源
+    if not records:
+        print(f"    ⚠️  akshare 失败，尝试备用数据源...")
+        records = fetch_backup_kline(item)
+
     if not records:
         return []
 
@@ -358,6 +366,228 @@ def fetch_full_with_pe(item: dict) -> list[dict]:
         records = calc_pe_series(eps, records)
 
     return records
+
+
+# ══════════════════════════════════════════
+#  备用数据源：腾讯 / 新浪 / 东方财富 HTTP
+# ══════════════════════════════════════════
+
+def _tencent_code(market: str, symbol: str) -> str:
+    """转换为腾讯财经代码格式。"""
+    if market == "a":
+        prefix = "sh" if symbol.startswith(("6", "9")) else "sz"
+        return f"{prefix}{symbol}"
+    elif market == "hk":
+        return f"hk{symbol}"
+    elif market == "us":
+        return f"us{symbol.split('.')[-1]}"
+    return symbol
+
+
+def fetch_tencent_kline(item: dict) -> list[dict]:
+    """备用源1：腾讯财经日线历史数据。"""
+    market, symbol = item["market"], item["symbol"]
+    code = _tencent_code(market, symbol)
+    try:
+        # A 股用 fqkline，港股用 hkfqkline
+        if market == "hk":
+            url = "https://web.ifzq.gtimg.cn/appstock/app/hkfqkline/get"
+        else:
+            url = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+        params = {
+            "param": f"{code},day,1990-01-01,2100-01-01,9999,qfq",
+            "_var": "kline_dayqfq",
+        }
+        resp = requests.get(url, params=params,
+                            headers={"User-Agent": "Mozilla/5.0"},
+                            timeout=20)
+        text = resp.text
+        # 返回格式：kline_dayqfq={json}
+        json_str = text.split("=", 1)[-1] if "=" in text else text
+        data = json.loads(json_str)
+
+        # data.data 可能是 dict 或 list，需要兼容处理
+        raw_data = data.get("data", {})
+        if isinstance(raw_data, dict):
+            stock_data = raw_data.get(code, {})
+            if isinstance(stock_data, dict):
+                day_data = stock_data.get("qfqday") or stock_data.get("day") or []
+            else:
+                day_data = []
+        else:
+            day_data = []
+
+        if not day_data:
+            return []
+
+        records = []
+        for row in day_data:
+            # 格式: [date, open, close, high, low, volume, ...]
+            if not isinstance(row, list) or len(row) < 6:
+                continue
+            records.append({
+                "date":   str(row[0])[:10],
+                "open":   _to_float(row[1]),
+                "high":   _to_float(row[3]),
+                "low":    _to_float(row[4]),
+                "close":  _to_float(row[2]),
+                "volume": _to_float(row[5]),
+                "amount": _to_float(row[6]) if len(row) > 6 else None,
+                "pe":     None,
+            })
+        records.sort(key=lambda x: x["date"])
+        if records:
+            print(f"    ✅ 腾讯财经成功获取 {len(records)} 条日线")
+        return records
+    except Exception:
+        traceback.print_exc()
+        return []
+
+
+def _eastmoney_kline_code(market: str, symbol: str) -> tuple:
+    """转换为东方财富 K 线接口的 secid 格式，返回 (secid, market_code)。"""
+    if market == "a":
+        mc = 1 if symbol.startswith(("6", "9")) else 0
+        return f"{mc}.{symbol}", mc
+    elif market == "hk":
+        return f"116.{symbol}", 116
+    elif market == "us":
+        ticker = symbol.split(".")[-1]
+        # 东方财富美股使用 105（纳斯达克）或 106（纽约）
+        return f"105.{ticker}", 105
+    return f"1.{symbol}", 1
+
+
+def fetch_eastmoney_kline(item: dict) -> list[dict]:
+    """备用源2：东方财富行情 HTTP 接口拉取日线历史。
+    优先使用 curl_cffi（TLS 指纹模拟，akshare 已自带），失败后回退 requests。
+    """
+    market, symbol = item["market"], item["symbol"]
+    secid, _ = _eastmoney_kline_code(market, symbol)
+    url = "https://push2his.eastmoney.com/api/qt/stock/kline/get"
+    params = {
+        "secid": secid,
+        "fields1": "f1,f2,f3,f4,f5,f6",
+        "fields2": "f51,f52,f53,f54,f55,f56,f57",
+        "klt": 101,       # 日线
+        "fqt": 1,         # 前复权
+        "beg": "19900101",
+        "end": "21000101",
+    }
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    data = None
+    # 尝试 curl_cffi（TLS 指纹，绕过反爬）
+    try:
+        from curl_cffi import requests as cf_requests
+        resp = cf_requests.get(url, params=params, headers=headers,
+                               impersonate="chrome", timeout=20)
+        data = resp.json()
+    except Exception:
+        pass
+
+    # 回退 requests
+    if not data:
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=20)
+            data = resp.json()
+        except Exception:
+            traceback.print_exc()
+            return []
+
+    try:
+        klines = data.get("data", {}).get("klines", [])
+        if not klines:
+            return []
+
+        records = []
+        for line in klines:
+            # 格式: "2024-01-02,open,close,high,low,volume,amount"
+            parts = line.split(",")
+            if len(parts) < 7:
+                continue
+            records.append({
+                "date":   parts[0],
+                "open":   _to_float(parts[1]),
+                "close":  _to_float(parts[2]),
+                "high":   _to_float(parts[3]),
+                "low":    _to_float(parts[4]),
+                "volume": _to_float(parts[5]),
+                "amount": _to_float(parts[6]),
+                "pe":     None,
+            })
+        records.sort(key=lambda x: x["date"])
+        if records:
+            print(f"    ✅ 东方财富HTTP成功获取 {len(records)} 条日线")
+        return records
+    except Exception:
+        traceback.print_exc()
+        return []
+
+
+def fetch_sina_kline(item: dict) -> list[dict]:
+    """备用源3：新浪财经日线历史数据（仅支持 A 股）。
+    新浪港股/美股历史 K 线接口不稳定，跳过。
+    """
+    market, symbol = item["market"], item["symbol"]
+    if market != "a":
+        return []  # 新浪仅对 A 股有稳定历史 K 线
+
+    try:
+        prefix = "sh" if symbol.startswith(("6", "9")) else "sz"
+        sina_symbol = f"{prefix}{symbol}"
+        url = (f"https://money.finance.sina.com.cn/quotes_service/"
+               f"api/json_v2.php/CN_MarketData.getKLineData?"
+               f"symbol={sina_symbol}&scale=240&ma=no&datalen=9999")
+        resp = requests.get(url,
+                            headers={"User-Agent": "Mozilla/5.0",
+                                     "Referer": "https://finance.sina.com.cn"},
+                            timeout=15)
+        text = resp.text.strip()
+        if not text or text == "null":
+            return []
+
+        rows = json.loads(text)
+        seen = {}
+        for r in rows:
+            date = str(r.get("day", ""))[:10]
+            if date:
+                seen[date] = {
+                    "date":   date,
+                    "open":   _to_float(r.get("open")),
+                    "high":   _to_float(r.get("high")),
+                    "low":    _to_float(r.get("low")),
+                    "close":  _to_float(r.get("close")),
+                    "volume": _to_float(r.get("volume")),
+                    "amount": None,
+                    "pe":     None,
+                }
+        records = sorted(seen.values(), key=lambda x: x["date"])
+        if records:
+            print(f"    ✅ 新浪财经成功获取 {len(records)} 条日线")
+        return records
+    except Exception:
+        traceback.print_exc()
+        return []
+
+
+def fetch_backup_kline(item: dict) -> list[dict]:
+    """按优先级尝试备用数据源：腾讯 → 东方财富HTTP → 新浪。"""
+    sources = [
+        ("腾讯财经", fetch_tencent_kline),
+        ("东方财富HTTP", fetch_eastmoney_kline),
+        ("新浪财经", fetch_sina_kline),
+    ]
+    for name, fetcher in sources:
+        time.sleep(BATCH_SLEEP)
+        try:
+            records = fetcher(item)
+            if records:
+                return records
+        except Exception:
+            pass
+        print(f"    ⚠️  {name} 也失败，继续下一个...")
+    return []
 
 
 # ══════════════════════════════════════════
@@ -437,6 +667,56 @@ def get_last_trading_date() -> str:
     return d.strftime("%Y-%m-%d")
 
 
+def _fetch_incr_fallback(item: dict, last_date: str) -> list[dict]:
+    """增量备用：用 akshare / 备用数据源拉取 last_date 之后的数据。"""
+    market, symbol = item["market"], item["symbol"]
+    start = last_date.replace("-", "")
+
+    # 先尝试 akshare 增量
+    try:
+        if market == "a":
+            df = ak.stock_zh_a_hist(symbol=symbol, period="daily",
+                                    start_date=start, end_date="21001231", adjust="qfq")
+        elif market == "hk":
+            df = ak.stock_hk_hist(symbol=symbol, period="daily",
+                                  start_date=start, end_date="21001231", adjust="qfq")
+        elif market == "us":
+            df = ak.stock_us_hist(symbol=symbol, period="daily",
+                                  start_date=start, end_date="21001231", adjust="qfq")
+        else:
+            df = None
+
+        if df is not None and not df.empty:
+            df = df.rename(columns={
+                "日期": "date", "开盘": "open", "最高": "high",
+                "最低": "low", "收盘": "close", "成交量": "volume", "成交额": "amount"
+            })
+            df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+            records = []
+            for _, row in df.iterrows():
+                if str(row["date"]) > last_date:
+                    records.append({
+                        "date":   row["date"],
+                        "open":   _to_float(row.get("open")),
+                        "high":   _to_float(row.get("high")),
+                        "low":    _to_float(row.get("low")),
+                        "close":  _to_float(row.get("close")),
+                        "volume": _to_float(row.get("volume")),
+                        "amount": _to_float(row.get("amount")),
+                        "pe":     None,
+                    })
+            if records:
+                return records
+    except Exception:
+        pass
+
+    # akshare 也失败 → 备用数据源拉全量后过滤
+    backup = fetch_backup_kline(item)
+    if backup:
+        return [r for r in backup if r["date"] > last_date]
+    return []
+
+
 # ══════════════════════════════════════════
 #  主逻辑：处理单只股票
 # ══════════════════════════════════════════
@@ -496,6 +776,9 @@ def process_item(item: dict, incr_only: bool = False) -> dict:
     added = 0
     if need_incr:
         incr_records = fetch_stockdata_incr(item)
+        # stock-data CLI 不可用时，用 akshare/备用源拉最近数据作为增量
+        if not incr_records:
+            incr_records = _fetch_incr_fallback(item, last_date)
         if incr_records:
             existing_dates = {r["date"] for r in existing}
             truly_new = [r for r in incr_records if r["date"] not in existing_dates]

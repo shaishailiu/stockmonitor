@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>韧性筛选报告 — 股票V型周期分析</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0F172A;
+      --bg-secondary: #1E293B;
+      --bg-tertiary: #334155;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --green: #10B981;
+      --green-light: #34D399;
+      --blue: #3B82F6;
+      --blue-light: #60A5FA;
+      --purple: #8B5CF6;
+      --purple-light: #A78BFA;
+      --red: #EF4444;
+      --red-light: #F87171;
+      --orange: #F59E0B;
+      --indigo: #6366F1;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "PingFang SC", "STHeiti", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── 顶部导航 ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      padding: 16px 32px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .navbar h1 {
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, var(--green), var(--blue), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .navbar .meta { font-size: 12px; color: var(--text-muted); }
+    .navbar .params { display: flex; gap: 12px; align-items: center; }
+    .param-badge {
+      background: var(--bg-tertiary); border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text-secondary);
+    }
+
+    /* ── 容器 ── */
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
+
+    /* ── 概览统计 ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+    .stat-card {
+      border-radius: 16px; padding: 24px; position: relative; overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    .stat-card.total { background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1)); border: 1px solid rgba(99,102,241,0.3); }
+    .stat-card.passed { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(52,211,153,0.1)); border: 1px solid rgba(16,185,129,0.3); }
+    .stat-card.failed { background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(248,113,113,0.05)); border: 1px solid rgba(239,68,68,0.2); }
+    .stat-card.skipped { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,191,36,0.05)); border: 1px solid rgba(245,158,11,0.2); }
+    .stat-number { font-size: 42px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .stat-card.total .stat-number { color: var(--indigo); }
+    .stat-card.passed .stat-number { color: var(--green); }
+    .stat-card.failed .stat-number { color: var(--red); }
+    .stat-card.skipped .stat-number { color: var(--orange); }
+    .stat-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+    .stat-pct { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg-secondary); border-radius: 12px; padding: 4px; }
+    .tab-btn {
+      flex: 1; padding: 10px 20px; border: none; border-radius: 10px;
+      background: transparent; color: var(--text-secondary); font-size: 14px;
+      font-weight: 500; cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--text-primary); background: rgba(51, 65, 85, 0.3); }
+    .tab-btn.active { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; }
+    .tab-count { font-size: 12px; opacity: 0.7; margin-left: 6px; }
+
+    /* ── 工具栏 ── */
+    .toolbar { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .search-box { flex: 1; min-width: 250px; position: relative; }
+    .search-box input {
+      width: 100%; background: var(--bg-secondary); border: 1px solid var(--bg-tertiary);
+      border-radius: 12px; padding: 10px 16px 10px 42px; color: var(--text-primary);
+      font-size: 14px; outline: none; transition: border-color 0.3s ease;
+    }
+    .search-box input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .search-box svg {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); width: 18px; height: 18px;
+    }
+    .sort-select {
+      background: var(--bg-secondary); border: 1px solid var(--bg-tertiary); border-radius: 12px;
+      padding: 10px 16px; color: var(--text-primary); font-size: 14px; outline: none; cursor: pointer;
+    }
+    .sort-select:focus { border-color: var(--blue); }
+    .market-filters { display: flex; gap: 8px; }
+    .market-btn {
+      background: var(--bg-secondary); border: 1px solid var(--bg-tertiary); border-radius: 8px;
+      padding: 8px 16px; color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;
+    }
+    .market-btn:hover { border-color: var(--blue); color: var(--text-primary); }
+    .market-btn.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue-light); }
+
+    /* ── 股票卡片 ── */
+    .cards-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px; }
+    .stock-card {
+      background: var(--bg-secondary); border: 1px solid var(--bg-tertiary);
+      border-radius: 16px; overflow: hidden; transition: all 0.3s ease; position: relative;
+    }
+    .stock-card:hover { border-color: rgba(59, 130, 246, 0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .stock-card .score-bar {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px 0 0 4px;
+    }
+    .stock-card .score-bar.high { background: linear-gradient(180deg, var(--green), var(--green-light)); }
+    .stock-card .score-bar.medium { background: linear-gradient(180deg, var(--blue), var(--blue-light)); }
+    .stock-card .score-bar.low { background: linear-gradient(180deg, var(--orange), #FBBF24); }
+    .stock-card .score-bar.none { background: linear-gradient(180deg, var(--bg-tertiary), var(--text-muted)); }
+
+    .card-header {
+      padding: 20px 24px 16px 24px; display: flex;
+      justify-content: space-between; align-items: center; cursor: pointer;
+    }
+    .card-header .left { display: flex; flex-direction: column; gap: 6px; }
+    .card-header .stock-name { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+    .card-header .stock-info { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .market-tag {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .market-tag.a { background: rgba(239,68,68,0.15); color: var(--red-light); }
+    .market-tag.hk { background: rgba(245,158,11,0.15); color: #FBBF24; }
+    .market-tag.us { background: rgba(59,130,246,0.15); color: var(--blue-light); }
+    .cycle-badge { font-size: 12px; color: var(--text-muted); }
+
+    /* ── 关键信息标签 ── */
+    .key-info-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .ki-tag {
+      font-size: 13px; font-weight: 600; padding: 2px 10px; border-radius: 6px;
+    }
+    .ki-tag.up { color: #34D399; background: rgba(16,185,129,0.12); }
+    .ki-tag.down { color: #F87171; background: rgba(239,68,68,0.12); }
+    .ki-tag.flat { color: var(--text-secondary); background: rgba(148,163,184,0.12); }
+    .ki-small { font-size: 12px; color: var(--text-muted); }
+
+    .card-header .right { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+    /* ── 圆形评分 ── */
+    .score-circle { width: 56px; height: 56px; position: relative; }
+    .score-circle svg { transform: rotate(-90deg); width: 56px; height: 56px; }
+    .score-circle .bg { fill: none; stroke: var(--bg-tertiary); stroke-width: 4; }
+    .score-circle .fg { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+    .score-circle .value {
+      position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; font-weight: 700;
+    }
+    .score-label { font-size: 11px; color: var(--text-muted); }
+
+    /* ── 卡片展开区 ── */
+    .card-body { display: none; padding: 0 24px 20px 24px; }
+    .card-body.open { display: block; }
+
+    /* ── K线图容器 ── */
+    .chart-container {
+      margin-bottom: 16px; border-radius: 12px; overflow: hidden;
+      background: var(--bg-primary); border: 1px solid var(--bg-tertiary);
+    }
+    .chart-box { width: 100%; height: 500px; }
+
+    /* ── 关键指标面板 ── */
+    .info-panel {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px; margin-bottom: 16px;
+    }
+    .info-item {
+      background: var(--bg-primary); border-radius: 10px; padding: 12px 14px;
+      border: 1px solid rgba(51, 65, 85, 0.4);
+    }
+    .info-item .label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .info-item .val { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .info-item .val.up { color: var(--green-light); }
+    .info-item .val.down { color: var(--red-light); }
+
+    /* ── 周期表格 ── */
+    .cycle-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .cycle-table th {
+      text-align: left; padding: 8px 12px; color: var(--text-muted);
+      font-weight: 600; font-size: 12px; border-bottom: 1px solid var(--bg-tertiary); white-space: nowrap;
+    }
+    .cycle-table td { padding: 10px 12px; color: var(--text-secondary); border-bottom: 1px solid rgba(51,65,85,0.3); }
+    .cycle-table tr:last-child td { border-bottom: none; }
+    .drop-value { color: var(--red-light); font-weight: 600; }
+    .recovery-value { color: var(--green-light); font-weight: 600; }
+    .speed-value { color: var(--purple-light); }
+
+    /* ── 展开指示 ── */
+    .expand-hint {
+      text-align: center; padding: 8px; font-size: 12px; color: var(--text-muted);
+      border-top: 1px solid rgba(51,65,85,0.3); cursor: pointer; transition: background 0.2s;
+    }
+    .expand-hint:hover { background: rgba(59,130,246,0.05); }
+
+    /* ── 股票类型三态切换 ── */
+    .stock-type-toggle {
+      display: inline-flex; gap: 0; border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--bg-tertiary); background: var(--bg-primary);
+    }
+    .stock-type-toggle .type-btn {
+      padding: 4px 12px; font-size: 12px; font-weight: 500;
+      border: none; background: transparent; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .stock-type-toggle .type-btn:hover { color: var(--text-secondary); background: rgba(51,65,85,0.3); }
+    .stock-type-toggle .type-btn.active-cyclical {
+      background: rgba(245,158,11,0.2); color: #FBBF24; font-weight: 600;
+    }
+    .stock-type-toggle .type-btn.active-non_cyclical {
+      background: rgba(59,130,246,0.2); color: var(--blue-light); font-weight: 600;
+    }
+    .stock-type-toggle .type-btn.active-unclassified {
+      background: rgba(148,163,184,0.15); color: var(--text-secondary); font-weight: 600;
+    }
+
+    /* ── 类型筛选器 ── */
+    .type-filters { display: flex; gap: 8px; }
+    .type-filter-btn {
+      background: var(--bg-secondary); border: 1px solid var(--bg-tertiary); border-radius: 8px;
+      padding: 8px 16px; color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;
+    }
+    .type-filter-btn:hover { border-color: var(--blue); color: var(--text-primary); }
+    .type-filter-btn.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue-light); }
+
+    /* ── 保存提示 Toast ── */
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(16,185,129,0.95); color: white; padding: 10px 24px;
+      border-radius: 10px; font-size: 14px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 9999;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .toast.error { background: rgba(239,68,68,0.95); }
+
+    /* ── 页脚 ── */
+    .footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--bg-tertiary); }
+
+    /* ── 加载 ── */
+    .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
+    .spinner { width: 48px; height: 48px; border: 3px solid var(--bg-tertiary); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .no-results { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 16px; }
+
+    /* ── 动画 ── */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
+
+    /* ── 响应式 ── */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .navbar { padding: 12px 16px; flex-direction: column; gap: 8px; }
+      .container { padding: 16px; }
+      .toolbar { flex-direction: column; }
+      .search-box { min-width: 100%; }
+      .chart-box { height: 400px; }
+      .info-panel { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div>
+      <h1>📊 韧性筛选报告</h1>
+      <div class="meta" id="generated-at">加载中...</div>
+    </div>
+    <div class="params" id="params-bar"></div>
+  </nav>
+
+  <div class="container">
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div style="color: var(--text-secondary)">加载筛选数据中...</div>
+    </div>
+
+    <div id="content" style="display:none">
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <!-- Tab 切换 -->
+      <div class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="passed">✅ 通过<span class="tab-count" id="tab-passed-count"></span></button>
+        <button class="tab-btn" data-tab="failed">❌ 未通过<span class="tab-count" id="tab-failed-count"></span></button>
+        <button class="tab-btn" data-tab="skipped">⏭ 跳过<span class="tab-count" id="tab-skipped-count"></span></button>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="search-input" placeholder="搜索股票名称或代码..." />
+        </div>
+        <select class="sort-select" id="sort-select">
+          <option value="score">按韧性评分排序</option>
+          <option value="cycles">按周期数排序</option>
+          <option value="recovery">按恢复比例排序</option>
+          <option value="change">按当日涨跌排序</option>
+          <option value="name">按名称排序</option>
+        </select>
+        <div class="market-filters" id="market-filters">
+          <button class="market-btn active" data-market="all">全部</button>
+          <button class="market-btn" data-market="a">A股</button>
+          <button class="market-btn" data-market="hk">港股</button>
+          <button class="market-btn" data-market="us">美股</button>
+        </div>
+        <div class="type-filters" id="type-filters">
+          <button class="type-filter-btn active" data-type="all">全部类型</button>
+          <button class="type-filter-btn" data-type="cyclical">🔄 周期</button>
+          <button class="type-filter-btn" data-type="non_cyclical">📊 非周期</button>
+          <button class="type-filter-btn" data-type="unclassified">❓ 未筛选</button>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="cards-grid"></div>
+      <div class="no-results" id="no-results" style="display:none">没有找到匹配的股票</div>
+    </div>
+  </div>
+
+  <div class="footer">韧性筛选报告 · 基于历史K线数据的V型周期检测 · ECharts 交互式K线 · 峰-谷-恢复三段检测算法</div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ══════════════════════════════════════════
+    //  全局状态
+    // ══════════════════════════════════════════
+    let DATA = null;
+    let currentTab = "passed";
+    let currentMarket = "all";
+    let currentSearch = "";
+    let currentSort = "score";
+    let currentType = "all";  // 类型筛选: all / cyclical / non_cyclical / unclassified
+    const chartInstances = new Map(); // 存储 ECharts 实例
+
+    // ══════════════════════════════════════════
+    //  Toast 提示
+    // ══════════════════════════════════════════
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.className = isError ? "toast error show" : "toast show";
+      setTimeout(() => { toast.className = toast.className.replace(" show", ""); }, 2000);
+    }
+
+    // ══════════════════════════════════════════
+    //  API: 更新股票类型
+    // ══════════════════════════════════════════
+    async function updateStockType(symbol, stockType) {
+      try {
+        const resp = await fetch("/api/stock_type", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol, stock_type: stockType }),
+        });
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error);
+        showToast(`✅ ${symbol} → ${stockType === "cyclical" ? "周期" : stockType === "non_cyclical" ? "非周期" : "未筛选"}`);
+        return true;
+      } catch (err) {
+        showToast(`❌ 保存失败: ${err.message}`, true);
+        return false;
+      }
+    }
+
+    // ══════════════════════════════════════════
+    //  加载数据
+    // ══════════════════════════════════════════
+    async function loadData() {
+      try {
+        const resp = await fetch("data.json");
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        DATA = await resp.json();
+
+        // 从服务器获取最新的 stock_type 和 duplicate_of，覆盖 data.json 中的快照数据
+        try {
+          const typeResp = await fetch("/api/stock_types");
+          if (typeResp.ok) {
+            const typeData = await typeResp.json();
+            if (typeData.ok) {
+              const typeMap = typeData.stock_types || {};
+              const dupMap = typeData.duplicates || {};
+              ["passed", "failed", "skipped"].forEach(cat => {
+                (DATA[cat] || []).forEach(s => {
+                  if (typeMap[s.symbol]) {
+                    s.stock_type = typeMap[s.symbol];
+                  }
+                  if (dupMap[s.symbol]) {
+                    s.duplicate_of = dupMap[s.symbol];
+                  }
+                });
+              });
+            }
+          }
+        } catch (_) {
+          // API 不可用时（如用简单 http.server），忽略，使用 data.json 中的快照
+        }
+
+        render();
+      } catch (err) {
+        document.getElementById("loading").innerHTML = `
+          <div style="color: var(--red-light); font-size: 16px;">⚠️ 加载失败</div>
+          <div style="color: var(--text-muted); font-size: 14px;">
+            请确保 data.json 存在于同目录下。<br/>
+            使用 <code>python3 -m http.server -d resilience_report 8080</code> 启动本地服务。
+          </div>
+          <div style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">${err.message}</div>
+        `;
+      }
+    }
+
+    // ══════════════════════════════════════════
+    //  渲染
+    // ══════════════════════════════════════════
+    function render() {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("content").style.display = "block";
+      renderMeta();
+      renderStats();
+      renderTabCounts();
+      renderCards();
+    }
+
+    function renderMeta() {
+      document.getElementById("generated-at").textContent = `生成时间: ${DATA.generated_at}`;
+      const p = DATA.params;
+      document.getElementById("params-bar").innerHTML = `
+        <span class="param-badge">跌幅 ≥${p.min_drop_pct}%</span>
+        <span class="param-badge">恢复 ≥${p.min_recovery_pct}%</span>
+        <span class="param-badge">回溯自 ${p.lookback_start}</span>
+        <span class="param-badge">${p.ma_window}日均线</span>
+      `;
+    }
+
+    function renderStats() {
+      const s = DATA.summary;
+      // 计算去重后的数量
+      const dedupPassed = (DATA.passed || []).filter(x => !x.duplicate_of).length;
+      const dedupFailed = (DATA.failed || []).filter(x => !x.duplicate_of).length;
+      const dedupSkipped = (DATA.skipped || []).filter(x => !x.duplicate_of).length;
+      const dedupTotal = dedupPassed + dedupFailed + dedupSkipped;
+      document.getElementById("stats-grid").innerHTML = `
+        <div class="stat-card total animate-in" style="animation-delay:0.1s">
+          <div class="stat-number">${dedupTotal}</div>
+          <div class="stat-label">总计股票</div>
+          <div class="stat-pct">去重后（已隐藏 ${s.total - dedupTotal} 只 A+H 重复港股）</div>
+        </div>
+        <div class="stat-card passed animate-in" style="animation-delay:0.2s">
+          <div class="stat-number">${dedupPassed}</div>
+          <div class="stat-label">通过筛选</div>
+          <div class="stat-pct">${(dedupPassed / dedupTotal * 100).toFixed(1)}% 的股票具有韧性</div>
+        </div>
+        <div class="stat-card failed animate-in" style="animation-delay:0.3s">
+          <div class="stat-number">${dedupFailed}</div>
+          <div class="stat-label">未通过</div>
+          <div class="stat-pct">未检测到合格V型周期</div>
+        </div>
+        <div class="stat-card skipped animate-in" style="animation-delay:0.4s">
+          <div class="stat-number">${dedupSkipped}</div>
+          <div class="stat-label">跳过</div>
+          <div class="stat-pct">数据不足或不适用</div>
+        </div>
+      `;
+    }
+
+    function renderTabCounts() {
+      const dedupPassed = (DATA.passed || []).filter(x => !x.duplicate_of).length;
+      const dedupFailed = (DATA.failed || []).filter(x => !x.duplicate_of).length;
+      const dedupSkipped = (DATA.skipped || []).filter(x => !x.duplicate_of).length;
+      document.getElementById("tab-passed-count").textContent = ` (${dedupPassed})`;
+      document.getElementById("tab-failed-count").textContent = ` (${dedupFailed})`;
+      document.getElementById("tab-skipped-count").textContent = ` (${dedupSkipped})`;
+    }
+
+    // ══════════════════════════════════════════
+    //  获取当前 Tab 的股票列表
+    // ══════════════════════════════════════════
+    function getFilteredStocks() {
+      let stocks = [...(DATA[currentTab] || [])];
+
+      // 跳过标记为重复的港股（A+H 重复，保留 A 股）
+      stocks = stocks.filter(s => !s.duplicate_of);
+
+      if (currentMarket !== "all") {
+        stocks = stocks.filter(s => s.market === currentMarket);
+      }
+      if (currentType !== "all") {
+        stocks = stocks.filter(s => (s.stock_type || "unclassified") === currentType);
+      }
+      if (currentSearch) {
+        const q = currentSearch.toLowerCase();
+        stocks = stocks.filter(s => s.name.toLowerCase().includes(q) || s.symbol.toLowerCase().includes(q));
+      }
+
+      // 排序
+      if (currentTab === "passed") {
+        switch (currentSort) {
+          case "score": stocks.sort((a, b) => b.score - a.score); break;
+          case "cycles": stocks.sort((a, b) => (b.cycle_count||0) - (a.cycle_count||0) || b.score - a.score); break;
+          case "recovery":
+            stocks.sort((a, b) => {
+              const aAvg = a.cycles ? a.cycles.reduce((s, c) => s + c.recovery_pct, 0) / a.cycles.length : 0;
+              const bAvg = b.cycles ? b.cycles.reduce((s, c) => s + c.recovery_pct, 0) / b.cycles.length : 0;
+              return bAvg - aAvg;
+            }); break;
+          case "change":
+            stocks.sort((a, b) => ((b.key_info?.change_pct)||0) - ((a.key_info?.change_pct)||0)); break;
+          case "name": stocks.sort((a, b) => a.name.localeCompare(b.name, "zh-CN")); break;
+        }
+      } else {
+        // failed / skipped 简单排序
+        if (currentSort === "change") {
+          stocks.sort((a, b) => ((b.key_info?.change_pct)||0) - ((a.key_info?.change_pct)||0));
+        } else if (currentSort === "name") {
+          stocks.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+        }
+      }
+
+      return stocks;
+    }
+
+    function renderCards() {
+      // 清理旧的 ECharts 实例
+      chartInstances.forEach(inst => inst.dispose());
+      chartInstances.clear();
+
+      const grid = document.getElementById("cards-grid");
+      const noResults = document.getElementById("no-results");
+      const stocks = getFilteredStocks();
+
+      if (stocks.length === 0) {
+        grid.innerHTML = "";
+        noResults.style.display = "block";
+        return;
+      }
+
+      noResults.style.display = "none";
+      grid.innerHTML = stocks.map((stock, idx) => createStockCard(stock, idx)).join("");
+    }
+
+    // ══════════════════════════════════════════
+    //  创建股票卡片 HTML
+    // ══════════════════════════════════════════
+    function createStockCard(stock, idx) {
+      const isPassed = currentTab === "passed";
+      const score = stock.score || 0;
+      const scoreColor = score >= 75 ? "high" : score >= 60 ? "medium" : score > 0 ? "low" : "none";
+      const scoreStroke = score >= 75 ? "var(--green)" : score >= 60 ? "var(--blue)" : score > 0 ? "var(--orange)" : "var(--text-muted)";
+      const circumference = 2 * Math.PI * 22;
+      const dashoffset = circumference * (1 - score / 100);
+      const marketLabel = { a: "A股", hk: "港股", us: "美股" }[stock.market] || stock.market;
+
+      // 股票类型
+      const stockType = stock.stock_type || "unclassified";
+
+      // 关键信息
+      const ki = stock.key_info || {};
+      const chgClass = (ki.change_pct || 0) > 0 ? "up" : (ki.change_pct || 0) < 0 ? "down" : "flat";
+      const chgSign = (ki.change_pct || 0) > 0 ? "+" : "";
+      const hasKline = stock.kline && stock.kline.length > 0;
+
+      // 关键信息行
+      let kiHtml = "";
+      if (ki.close) {
+        kiHtml = `
+          <div class="key-info-row">
+            <span class="ki-tag ${chgClass}">${ki.close.toFixed(2)} ${chgSign}${(ki.change_pct||0).toFixed(2)}%</span>
+            ${ki.pe ? `<span class="ki-small">PE: ${ki.pe}</span>` : ""}
+            ${ki.high_52w ? `<span class="ki-small">52周高: ${ki.high_52w.toFixed(2)}</span>` : ""}
+            ${ki.from_high_pct != null ? `<span class="ki-small">距高${ki.from_high_pct > 0 ? '+' : ''}${ki.from_high_pct}%</span>` : ""}
+          </div>
+        `;
+      }
+
+      // 三态切换按钮
+      const typeToggleHtml = `
+        <div class="stock-type-toggle" onclick="event.stopPropagation()">
+          <button class="type-btn ${stockType === 'cyclical' ? 'active-cyclical' : ''}"
+                  onclick="onTypeToggle('${stock.symbol}', 'cyclical', '${currentTab}', ${idx})"
+                  title="标记为周期股">🔄 周期</button>
+          <button class="type-btn ${stockType === 'non_cyclical' ? 'active-non_cyclical' : ''}"
+                  onclick="onTypeToggle('${stock.symbol}', 'non_cyclical', '${currentTab}', ${idx})"
+                  title="标记为非周期股">📊 非周期</button>
+          <button class="type-btn ${stockType === 'unclassified' ? 'active-unclassified' : ''}"
+                  onclick="onTypeToggle('${stock.symbol}', 'unclassified', '${currentTab}', ${idx})"
+                  title="标记为未筛选">❓ 未筛选</button>
+        </div>
+      `;
+
+      // 周期表格（仅 passed）
+      let cyclesHtml = "";
+      if (isPassed && stock.cycles) {
+        const rows = stock.cycles.map((c, ci) => `
+          <tr>
+            <td style="color: var(--text-primary)">#${ci + 1}</td>
+            <td><span style="color: var(--red-light)">${c.peak_date}</span><br/><small>${c.peak_price.toFixed(2)}</small></td>
+            <td><span style="color: var(--green-light)">${c.trough_date}</span><br/><small>${c.trough_price.toFixed(2)}</small></td>
+            <td><span style="color: var(--purple-light)">${c.recovery_date}</span><br/><small>${c.recovery_price.toFixed(2)}</small></td>
+            <td class="drop-value">-${c.drop_pct}%</td>
+            <td class="recovery-value">${c.recovery_pct}%</td>
+            <td class="speed-value">${c.drop_days}天</td>
+            <td class="speed-value">${c.recovery_days}天</td>
+          </tr>
+        `).join("");
+        cyclesHtml = `
+          <table class="cycle-table">
+            <thead><tr>
+              <th>周期</th><th>📈 峰值</th><th>📉 谷底</th><th>🔄 恢复点</th>
+              <th>跌幅</th><th>恢复比例</th><th>下跌天数</th><th>恢复天数</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }
+
+      // 未通过原因
+      let reasonHtml = "";
+      if (!isPassed && stock.reason) {
+        reasonHtml = `<div style="padding: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">📝 ${stock.reason}</div>`;
+      }
+
+      const delay = Math.min(idx * 0.03, 0.3);
+
+      return `
+        <div class="stock-card animate-in" style="animation-delay: ${delay}s" id="card-${currentTab}-${idx}">
+          <div class="score-bar ${scoreColor}"></div>
+          <div class="card-header" onclick="toggleCard('${currentTab}', ${idx})">
+            <div class="left">
+              <div class="stock-name">${stock.name}</div>
+              <div class="stock-info">
+                <span class="market-tag ${stock.market}">${marketLabel}</span>
+                <span class="cycle-badge">${stock.symbol}${isPassed ? ` · ${stock.cycle_count}个V型周期` : ''}</span>
+                ${typeToggleHtml}
+              </div>
+              ${kiHtml}
+            </div>
+            <div class="right">
+              ${isPassed ? `
+                <div class="score-circle">
+                  <svg viewBox="0 0 48 48">
+                    <circle class="bg" cx="24" cy="24" r="22"/>
+                    <circle class="fg" cx="24" cy="24" r="22" stroke="${scoreStroke}"
+                      stroke-dasharray="${circumference}" stroke-dashoffset="${dashoffset}"/>
+                  </svg>
+                  <div class="value" style="color: ${scoreStroke}">${score}</div>
+                </div>
+                <div class="score-label">韧性评分</div>
+              ` : `
+                <div style="font-size:24px">${currentTab === 'failed' ? '❌' : '⏭'}</div>
+              `}
+            </div>
+          </div>
+          <div class="card-body" id="body-${currentTab}-${idx}">
+            ${reasonHtml}
+            ${hasKline ? `
+              <!-- 关键指标面板 -->
+              <div class="info-panel" id="info-panel-${currentTab}-${idx}"></div>
+              <!-- K线图 -->
+              <div class="chart-container">
+                <div class="chart-box" id="chart-${currentTab}-${idx}"></div>
+              </div>
+            ` : `<div style="padding:30px;text-align:center;color:var(--text-muted);">暂无K线数据</div>`}
+            ${cyclesHtml}
+          </div>
+          <div class="expand-hint" onclick="toggleCard('${currentTab}', ${idx})">
+            <span id="arrow-${currentTab}-${idx}">▼</span>
+            <span id="hint-text-${currentTab}-${idx}"> 点击展开查看${hasKline ? 'K线图和' : ''}详情</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // ══════════════════════════════════════════
+    //  ECharts K线图渲染
+    // ══════════════════════════════════════════
+    function renderKlineChart(tab, idx, stock) {
+      const domId = `chart-${tab}-${idx}`;
+      const dom = document.getElementById(domId);
+      if (!dom || !stock.kline || stock.kline.length === 0) return;
+
+      // 避免重复渲染
+      const key = `${tab}-${idx}`;
+      if (chartInstances.has(key)) return;
+
+      const chart = echarts.init(dom, null, { renderer: 'canvas' });
+      chartInstances.set(key, chart);
+
+      const kline = stock.kline;
+      const dates = kline.map(k => k[0]);
+      const ohlc = kline.map(k => [k[1], k[2], k[3], k[4]]); // open, close, low, high
+      const volumes = kline.map(k => k[5] || 0);
+
+      // 计算 MA
+      const calcMA = (n) => {
+        const res = [];
+        for (let i = 0; i < dates.length; i++) {
+          if (i < n - 1) { res.push('-'); continue; }
+          let sum = 0;
+          for (let j = 0; j < n; j++) sum += ohlc[i - j][1]; // close
+          res.push((sum / n).toFixed(2));
+        }
+        return res;
+      };
+
+      // V 型周期标注线（仅 passed）
+      const markAreaData = [];
+      const markPointData = [];
+      if (stock.cycles) {
+        stock.cycles.forEach((c, ci) => {
+          // 下跌区间
+          markAreaData.push([
+            { xAxis: c.peak_date, itemStyle: { color: 'rgba(239,68,68,0.08)' } },
+            { xAxis: c.trough_date }
+          ]);
+          // 恢复区间
+          markAreaData.push([
+            { xAxis: c.trough_date, itemStyle: { color: 'rgba(16,185,129,0.08)' } },
+            { xAxis: c.recovery_date }
+          ]);
+          // 关键点标注
+          markPointData.push(
+            { coord: [c.peak_date, c.peak_price], value: `峰 ${c.peak_price.toFixed(1)}`, symbol: 'triangle', symbolRotate: 180, symbolSize: 14, itemStyle: { color: '#EF4444' }, label: { show: true, position: 'top', fontSize: 10, color: '#F87171', formatter: `峰 ${c.peak_price.toFixed(0)}` } },
+            { coord: [c.trough_date, c.trough_price], value: `谷 ${c.trough_price.toFixed(1)}`, symbol: 'triangle', symbolSize: 14, itemStyle: { color: '#10B981' }, label: { show: true, position: 'bottom', fontSize: 10, color: '#34D399', formatter: `谷 -${c.drop_pct}%` } },
+            { coord: [c.recovery_date, c.recovery_price], value: `恢复`, symbol: 'pin', symbolSize: 16, itemStyle: { color: '#8B5CF6' }, label: { show: true, position: 'top', fontSize: 10, color: '#A78BFA', formatter: `恢复 ${c.recovery_pct}%` } }
+          );
+        });
+      }
+
+      const option = {
+        backgroundColor: '#0F172A',
+        animation: false,
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'cross', crossStyle: { color: '#475569' } },
+          backgroundColor: 'rgba(30, 41, 59, 0.95)',
+          borderColor: '#334155',
+          textStyle: { color: '#F8FAFC', fontSize: 12 },
+          formatter: function(params) {
+            if (!params || params.length === 0) return '';
+            const d = params[0].axisValue;
+            let html = `<div style="font-weight:600;margin-bottom:4px">${d}</div>`;
+            const kp = params.find(p => p.seriesName === 'K线');
+            if (kp && kp.data) {
+              const [o, c, l, h] = kp.data;
+              const chg = c - o;
+              const color = chg >= 0 ? '#34D399' : '#F87171';
+              html += `<div>开 <b>${o}</b></div>`;
+              html += `<div>收 <b style="color:${color}">${c}</b></div>`;
+              html += `<div>低 <b>${l}</b>  高 <b>${h}</b></div>`;
+            }
+            params.forEach(p => {
+              if (p.seriesName.startsWith('MA') && p.data !== '-') {
+                html += `<div style="color:${p.color}">${p.seriesName}: ${p.data}</div>`;
+              }
+              if (p.seriesName === '成交量' && p.data) {
+                html += `<div style="color:#64748B">量: ${(p.data/10000).toFixed(0)}万</div>`;
+              }
+            });
+            return html;
+          }
+        },
+        axisPointer: { link: [{ xAxisIndex: 'all' }] },
+        grid: [
+          { left: 60, right: 30, top: 30, height: '55%' },
+          { left: 60, right: 30, top: '72%', height: '18%' }
+        ],
+        xAxis: [
+          {
+            type: 'category', data: dates, gridIndex: 0,
+            axisLine: { lineStyle: { color: '#334155' } },
+            axisLabel: { color: '#64748B', fontSize: 10 },
+            splitLine: { show: false },
+            boundaryGap: true, min: 'dataMin', max: 'dataMax'
+          },
+          {
+            type: 'category', data: dates, gridIndex: 1,
+            axisLine: { lineStyle: { color: '#334155' } },
+            axisLabel: { show: false },
+            splitLine: { show: false },
+            boundaryGap: true, min: 'dataMin', max: 'dataMax'
+          }
+        ],
+        yAxis: [
+          {
+            scale: true, gridIndex: 0,
+            axisLine: { lineStyle: { color: '#334155' } },
+            axisLabel: { color: '#64748B', fontSize: 10 },
+            splitLine: { lineStyle: { color: 'rgba(71,85,105,0.2)', type: 'dashed' } }
+          },
+          {
+            scale: true, gridIndex: 1,
+            axisLine: { lineStyle: { color: '#334155' } },
+            axisLabel: { show: false },
+            splitLine: { show: false }
+          }
+        ],
+        dataZoom: [
+          { type: 'inside', xAxisIndex: [0, 1], start: 0, end: 100 },
+          { type: 'slider', xAxisIndex: [0, 1], bottom: 4, height: 20,
+            borderColor: '#334155', backgroundColor: '#1E293B',
+            fillerColor: 'rgba(59,130,246,0.15)',
+            dataBackground: { lineStyle: { color: '#475569' }, areaStyle: { color: 'rgba(59,130,246,0.05)' } },
+            textStyle: { color: '#64748B', fontSize: 10 }
+          }
+        ],
+        series: [
+          {
+            name: 'K线', type: 'candlestick', data: ohlc, xAxisIndex: 0, yAxisIndex: 0,
+            itemStyle: {
+              color: '#10B981', color0: '#EF4444',
+              borderColor: '#10B981', borderColor0: '#EF4444'
+            },
+            markArea: markAreaData.length ? { silent: true, data: markAreaData } : undefined,
+            markPoint: markPointData.length ? { data: markPointData, animation: false } : undefined,
+          },
+          {
+            name: 'MA5', type: 'line', data: calcMA(5), xAxisIndex: 0, yAxisIndex: 0,
+            smooth: true, lineStyle: { width: 1, color: '#F59E0B' }, symbol: 'none'
+          },
+          {
+            name: 'MA20', type: 'line', data: calcMA(20), xAxisIndex: 0, yAxisIndex: 0,
+            smooth: true, lineStyle: { width: 1, color: '#3B82F6' }, symbol: 'none'
+          },
+          {
+            name: 'MA60', type: 'line', data: calcMA(60), xAxisIndex: 0, yAxisIndex: 0,
+            smooth: true, lineStyle: { width: 1, color: '#8B5CF6' }, symbol: 'none'
+          },
+          {
+            name: '成交量', type: 'bar', data: volumes, xAxisIndex: 1, yAxisIndex: 1,
+            itemStyle: {
+              color: function(params) {
+                const i = params.dataIndex;
+                return ohlc[i][1] >= ohlc[i][0] ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+              }
+            }
+          }
+        ]
+      };
+
+      chart.setOption(option);
+
+      // 响应式
+      const resizeObs = new ResizeObserver(() => chart.resize());
+      resizeObs.observe(dom);
+    }
+
+    function renderInfoPanel(tab, idx, stock) {
+      const panelId = `info-panel-${tab}-${idx}`;
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+
+      const ki = stock.key_info || {};
+      if (!ki.close) { panel.style.display = 'none'; return; }
+
+      const chgClass = (ki.change_pct||0) > 0 ? 'up' : (ki.change_pct||0) < 0 ? 'down' : '';
+      const chgSign = (ki.change_pct||0) > 0 ? '+' : '';
+
+      const items = [
+        { label: '最新收盘', val: ki.close?.toFixed(2), cls: chgClass },
+        { label: '当日涨跌', val: `${chgSign}${(ki.change||0).toFixed(2)} (${chgSign}${(ki.change_pct||0).toFixed(2)}%)`, cls: chgClass },
+        { label: '开盘', val: ki.open?.toFixed(2) },
+        { label: '最高 / 最低', val: ki.high && ki.low ? `${ki.high.toFixed(2)} / ${ki.low.toFixed(2)}` : '-' },
+        { label: 'PE (TTM)', val: ki.pe || '-' },
+        { label: 'MA5', val: ki.ma5?.toFixed(2) || '-' },
+        { label: 'MA20', val: ki.ma20?.toFixed(2) || '-' },
+        { label: 'MA60', val: ki.ma60?.toFixed(2) || '-' },
+        { label: '52周高点', val: ki.high_52w?.toFixed(2) || '-' },
+        { label: '52周低点', val: ki.low_52w?.toFixed(2) || '-' },
+        { label: '距52周高', val: ki.from_high_pct != null ? `${ki.from_high_pct > 0 ? '+' : ''}${ki.from_high_pct}%` : '-', cls: (ki.from_high_pct||0) >= 0 ? 'up' : 'down' },
+        { label: '距52周低', val: ki.from_low_pct != null ? `+${ki.from_low_pct}%` : '-', cls: 'up' },
+      ];
+
+      panel.innerHTML = items.filter(i => i.val && i.val !== '-').map(i =>
+        `<div class="info-item">
+          <div class="label">${i.label}</div>
+          <div class="val ${i.cls || ''}">${i.val}</div>
+        </div>`
+      ).join('');
+    }
+
+    // ══════════════════════════════════════════
+    //  交互
+    // ══════════════════════════════════════════
+    function toggleCard(tab, idx) {
+      const body = document.getElementById(`body-${tab}-${idx}`);
+      const arrow = document.getElementById(`arrow-${tab}-${idx}`);
+      const hintText = document.getElementById(`hint-text-${tab}-${idx}`);
+      if (!body) return;
+
+      const isOpen = body.classList.toggle("open");
+      if (arrow) arrow.textContent = isOpen ? "▲" : "▼";
+      if (hintText) hintText.textContent = isOpen ? " 点击收起" : " 点击展开查看详情";
+
+      // 展开时渲染 K 线图
+      if (isOpen) {
+        const stocks = getFilteredStocks();
+        const stock = stocks[idx];
+        if (stock) {
+          renderInfoPanel(tab, idx, stock);
+          renderKlineChart(tab, idx, stock);
+        }
+      }
+    }
+
+    // ── Tab 切换 ──
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (!btn) return;
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentTab = btn.dataset.tab;
+
+      // 更新排序选项可见性
+      const sortSelect = document.getElementById("sort-select");
+      if (currentTab !== "passed") {
+        sortSelect.querySelectorAll("option").forEach(o => {
+          if (["score","cycles","recovery"].includes(o.value)) o.style.display = "none";
+          else o.style.display = "";
+        });
+        if (["score","cycles","recovery"].includes(currentSort)) {
+          currentSort = "name";
+          sortSelect.value = "name";
+        }
+      } else {
+        sortSelect.querySelectorAll("option").forEach(o => o.style.display = "");
+      }
+
+      renderCards();
+    });
+
+    // ── 搜索 ──
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      currentSearch = e.target.value.trim();
+      renderCards();
+    });
+
+    // ── 排序 ──
+    document.getElementById("sort-select").addEventListener("change", (e) => {
+      currentSort = e.target.value;
+      renderCards();
+    });
+
+    // ── 市场 ──
+    document.getElementById("market-filters").addEventListener("click", (e) => {
+      const btn = e.target.closest(".market-btn");
+      if (!btn) return;
+      document.querySelectorAll(".market-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentMarket = btn.dataset.market;
+      renderCards();
+    });
+
+    // ── 类型筛选 ──
+    document.getElementById("type-filters").addEventListener("click", (e) => {
+      const btn = e.target.closest(".type-filter-btn");
+      if (!btn) return;
+      document.querySelectorAll(".type-filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentType = btn.dataset.type;
+      renderCards();
+    });
+
+    // ── 三态切换（周期/非周期/未筛选）──
+    async function onTypeToggle(symbol, newType, tab, idx) {
+      const ok = await updateStockType(symbol, newType);
+      if (!ok) return;
+
+      // 更新本地 DATA 中所有分类里该 symbol 的 stock_type
+      ["passed", "failed", "skipped"].forEach(cat => {
+        (DATA[cat] || []).forEach(s => {
+          if (s.symbol === symbol) s.stock_type = newType;
+        });
+      });
+
+      // 如果当前有类型筛选激活，需要重新渲染整个列表
+      if (currentType !== "all") {
+        renderCards();
+      } else {
+        // 只更新当前卡片的按钮状态（避免重渲所有卡片）
+        const card = document.getElementById(`card-${tab}-${idx}`);
+        if (card) {
+          const btns = card.querySelectorAll(".stock-type-toggle .type-btn");
+          btns.forEach(btn => {
+            btn.className = "type-btn"; // 清除所有状态
+            const btnText = btn.textContent.trim();
+            const btnType = btnText.includes("周期") && !btnText.includes("非") ? "cyclical"
+              : btnText.includes("非周期") ? "non_cyclical" : "unclassified";
+            if (btnType === newType) {
+              btn.classList.add(`active-${newType}`);
+            }
+          });
+        }
+      }
+    }
+
+    // ── 窗口 resize ──
+    window.addEventListener("resize", () => {
+      chartInstances.forEach(inst => inst.resize());
+    });
+
+    // ══════════════════════════════════════════
+    //  启动
+    // ══════════════════════════════════════════
+    loadData();
+  </script>
+</body>
+</html>

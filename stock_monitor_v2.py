@@ -22,8 +22,11 @@ ALERT_LEVELS = [
 
 
 def load_config():
+    """加载配置，只保留 stock_type 为 cyclical 且无 duplicate_of 的股票。"""
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)["stocks"]
+        stocks = json.load(f)["stocks"]
+    return [s for s in stocks
+            if s.get("stock_type") == "cyclical" and not s.get("duplicate_of")]
 
 
 def load_block_symbols() -> set:
