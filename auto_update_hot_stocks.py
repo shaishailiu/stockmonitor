@@ -3,7 +3,7 @@
 自动更新热门股票配置
 每天晚上8点执行：
 1. 获取港股、A股、美股 TOP 50 热度排名（按成交额）
-2. 对比 config.json 中的股票列表
+2. 对比 hot.json 中的股票列表
 3. 自动添加热度高但不在配置中的股票
 """
 
@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 # 配置
-CONFIG_FILE = Path(__file__).parent / "config.json"
+CONFIG_FILE = Path(__file__).parent / "hot.json"
 TOP_N = 50  # 获取前50名
 MIN_VOLUME_THRESHOLD = {
     'hk': 5e8,    # 港股最低5亿港币成交额
