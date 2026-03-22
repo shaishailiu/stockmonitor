@@ -100273,5 +100273,20 @@
     "change":0.28,
     "turnover_rate":0.51,
     "market_cap":null
+  },
+  {
+    "date":"2026-03-10",
+    "symbol":"AMZN",
+    "open":214.19,
+    "high":215.65,
+    "low":212.43,
+    "close":214.33,
+    "volume":35678823,
+    "amount":null,
+    "amplitude":null,
+    "change_pct":null,
+    "change":null,
+    "turnover_rate":null,
+    "market_cap":null
   }
 ]
