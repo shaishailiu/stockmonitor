@@ -166,6 +166,9 @@ def fetch_akshare_kline(item: dict) -> list[dict]:
                 "日期": "date", "开盘": "open", "最高": "high",
                 "最低": "low", "收盘": "close", "成交量": "volume", "成交额": "amount"
             })
+        elif market == "crypto":
+            # 加密货币使用 CoinGecko 公开 API
+            return fetch_crypto_kline(item)
         else:
             return []
 
@@ -349,6 +352,7 @@ def calc_pe_series(quarterly_eps: list[dict], records: list[dict]) -> list[dict]
 def fetch_full_with_pe(item: dict) -> list[dict]:
     """层2：akshare 拉历史 K 线 + 东方财富计算 PE，返回完整记录。
     如果 akshare 失败，自动切换到备用数据源（腾讯/新浪/东方财富HTTP）。
+    crypto 不计算 PE。
     """
     records = fetch_akshare_kline(item)
 
@@ -360,12 +364,251 @@ def fetch_full_with_pe(item: dict) -> list[dict]:
     if not records:
         return []
 
+    # crypto 没有 EPS/PE 概念，跳过
+    if item["market"] == "crypto":
+        return records
+
     time.sleep(BATCH_SLEEP)
     eps = _fetch_quarterly_eps(item["market"], item["symbol"])
     if eps:
         records = calc_pe_series(eps, records)
 
     return records
+
+
+# ══════════════════════════════════════════
+#  加密货币：CoinGecko（主） / Binance / yfinance（备用）
+# ══════════════════════════════════════════
+
+# CoinGecko 币种 ID 映射
+_COINGECKO_IDS = {
+    "BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana",
+    "BNB": "binancecoin", "XRP": "ripple", "ADA": "cardano",
+    "DOGE": "dogecoin", "AVAX": "avalanche-2", "DOT": "polkadot",
+    "MATIC": "matic-network", "LINK": "chainlink", "UNI": "uniswap",
+}
+
+
+def fetch_crypto_kline(item: dict, days: int = 365) -> list[dict]:
+    """加密货币统一入口：CoinGecko → Binance → yfinance 三级回退。
+
+    Args:
+        days: CoinGecko 请求天数，免费版最大 365。增量更新建议传实际需要的天数。
+    """
+    # 1. CoinGecko（主数据源）
+    records = _fetch_coingecko_kline(item, days=days)
+    if records:
+        return records
+
+    # 2. Binance（备用）
+    print(f"    [WARN] CoinGecko 失败，尝试 Binance...")
+    records = _fetch_binance_kline(item)
+    if records:
+        return records
+
+    # 3. yfinance（最终备用）
+    print(f"    [WARN] Binance 失败，尝试 yfinance...")
+    return _fetch_yfinance_kline(item)
+
+
+def _fetch_coingecko_kline(item: dict, days: int = 365) -> list[dict]:
+    """从 CoinGecko 免费 API 拉取加密货币日线历史（无需 API Key）。
+
+    CoinGecko 免费版限制：days=max 需要付费，免费用户最多 365 天。
+    增量更新只需拉最近 N 天即可，全量拉取会分批请求（每批 365 天）。
+    注意：CoinGecko 免费版日线只提供 close 价格，open/high/low 近似为 close。
+    """
+    sym = item["symbol"].upper()
+    coin_id = _COINGECKO_IDS.get(sym)
+    if not coin_id:
+        print(f"    [WARN] CoinGecko 不支持 {sym}，请在 _COINGECKO_IDS 中添加映射")
+        return []
+
+    # 限制单次请求不超过 365 天（免费版上限）
+    days = min(days, 365)
+
+    try:
+        url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
+        params = {"vs_currency": "usd", "days": str(days), "interval": "daily"}
+        resp = requests.get(url, params=params,
+                            headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
+        if resp.status_code != 200:
+            print(f"    [WARN] CoinGecko 返回 {resp.status_code}")
+            return []
+
+        data = resp.json()
+        prices = data.get("prices", [])
+        volumes = data.get("total_volumes", [])
+
+        # 构建 volume 字典方便匹配
+        vol_map = {}
+        for ts_ms, vol in volumes:
+            d = datetime.utcfromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d")
+            vol_map[d] = vol
+
+        records = []
+        for ts_ms, price in prices:
+            d = datetime.utcfromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d")
+            records.append({
+                "date":   d,
+                "open":   price,
+                "high":   price,
+                "low":    price,
+                "close":  price,
+                "volume": vol_map.get(d, 0),
+                "amount": 0,
+                "pe":     None,
+            })
+
+        # 去重
+        seen = {}
+        for r in records:
+            seen[r["date"]] = r
+        records = sorted(seen.values(), key=lambda x: x["date"])
+
+        if records:
+            print(f"    [OK] CoinGecko 成功获取 {len(records)} 条日线（请求 {days} 天）")
+        return records
+
+    except Exception:
+        traceback.print_exc()
+        return []
+
+
+# Binance API 域名列表（备用），应对 CoinGecko 不可用的情况
+_BINANCE_API_HOSTS = [
+    "https://api.binance.com",
+    "https://api1.binance.com",
+    "https://api2.binance.com",
+    "https://api3.binance.com",
+    "https://api4.binance.com",
+]
+
+
+def _crypto_pair(symbol: str) -> str:
+    """将 config 中的 symbol 转为 Binance 交易对，如 BTC → BTCUSDT。"""
+    s = symbol.upper()
+    if s.endswith("USDT") or s.endswith("USD"):
+        return s if s.endswith("USDT") else s.replace("USD", "USDT")
+    return f"{s}USDT"
+
+
+def _fetch_binance_kline(item: dict) -> list[dict]:
+    """从 Binance 公开 API 拉取加密货币全量日线历史（备用数据源）。
+
+    Binance /api/v3/klines 每次最多返回 1000 条，需分批拉取。
+    """
+    pair = _crypto_pair(item["symbol"])
+    all_records = []
+    start_ms = int(datetime(2017, 1, 1).timestamp() * 1000)
+    end_ms = int(datetime.now().timestamp() * 1000)
+
+    try:
+        while start_ms < end_ms:
+            resp = None
+            for host in _BINANCE_API_HOSTS:
+                try:
+                    resp = requests.get(
+                        f"{host}/api/v3/klines",
+                        params={"symbol": pair, "interval": "1d",
+                                "startTime": start_ms, "endTime": end_ms, "limit": 1000},
+                        headers={"User-Agent": "Mozilla/5.0"}, timeout=15,
+                    )
+                    if resp.status_code == 200:
+                        break
+                    resp = None
+                except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
+                    continue
+
+            if resp is None or resp.status_code != 200:
+                break
+
+            data = resp.json()
+            if not isinstance(data, list) or len(data) == 0:
+                break
+
+            for row in data:
+                ts = int(row[0]) / 1000
+                date_str = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+                all_records.append({
+                    "date":   date_str,
+                    "open":   _to_float(row[1]),
+                    "high":   _to_float(row[2]),
+                    "low":    _to_float(row[3]),
+                    "close":  _to_float(row[4]),
+                    "volume": _to_float(row[5]),
+                    "amount": _to_float(row[7]),
+                    "pe":     None,
+                })
+
+            start_ms = int(data[-1][6]) + 1
+            time.sleep(0.3)
+
+    except Exception:
+        traceback.print_exc()
+
+    if all_records:
+        seen = {}
+        for r in all_records:
+            seen[r["date"]] = r
+        records = sorted(seen.values(), key=lambda x: x["date"])
+        print(f"    [OK] Binance API 成功获取 {len(records)} 条日线")
+        return records
+
+    return []
+
+
+# yfinance 币种映射
+_YFINANCE_TICKERS = {
+    "BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD",
+    "BNB": "BNB-USD", "XRP": "XRP-USD", "ADA": "ADA-USD",
+    "DOGE": "DOGE-USD", "AVAX": "AVAX-USD", "DOT": "DOT-USD",
+    "MATIC": "MATIC-USD", "LINK": "LINK-USD", "UNI": "UNI-USD",
+}
+
+
+def _fetch_yfinance_kline(item: dict) -> list[dict]:
+    """从 yfinance 拉取加密货币日线历史（Yahoo Finance，最终备用）。"""
+    try:
+        import yfinance as yf
+    except ImportError:
+        print("    [WARN] yfinance 未安装，跳过")
+        return []
+
+    sym = item["symbol"].upper()
+    ticker = _YFINANCE_TICKERS.get(sym)
+    if not ticker:
+        ticker = f"{sym}-USD"
+
+    try:
+        t = yf.Ticker(ticker)
+        df = t.history(period="max")
+
+        if df is None or df.empty:
+            print(f"    [WARN] yfinance 返回空数据 ({ticker})")
+            return []
+
+        records = []
+        for idx, row in df.iterrows():
+            date_str = idx.strftime("%Y-%m-%d")
+            records.append({
+                "date":   date_str,
+                "open":   float(row.get("Open", 0)),
+                "high":   float(row.get("High", 0)),
+                "low":    float(row.get("Low", 0)),
+                "close":  float(row.get("Close", 0)),
+                "volume": float(row.get("Volume", 0)),
+                "amount": 0,
+                "pe":     None,
+            })
+
+        if records:
+            print(f"    [OK] yfinance 成功获取 {len(records)} 条日线 ({ticker})")
+        return records
+
+    except Exception as e:
+        print(f"    [WARN] yfinance 失败: {e}")
+        return []
 
 
 # ══════════════════════════════════════════
@@ -572,7 +815,12 @@ def fetch_sina_kline(item: dict) -> list[dict]:
 
 
 def fetch_backup_kline(item: dict) -> list[dict]:
-    """按优先级尝试备用数据源：腾讯 → 东方财富HTTP → 新浪。"""
+    """按优先级尝试备用数据源：腾讯 → 东方财富HTTP → 新浪。
+    加密货币直接走 CoinGecko API。
+    """
+    if item["market"] == "crypto":
+        return fetch_crypto_kline(item)
+
     sources = [
         ("腾讯财经", fetch_tencent_kline),
         ("东方财富HTTP", fetch_eastmoney_kline),
@@ -660,16 +908,31 @@ def fetch_stockdata_pe(item: dict) -> float | None:
         return None
 
 
-def get_last_trading_date() -> str:
+def get_last_trading_date(market: str = "a") -> str:
+    """获取最近一个交易日。crypto 7x24 交易用昨天，其他跳过周末。"""
     d = datetime.now()
-    while d.weekday() >= 5:
+    if market == "crypto":
+        # crypto 24h 交易，但当天可能还没结束，用昨天
         d -= timedelta(days=1)
+    else:
+        while d.weekday() >= 5:
+            d -= timedelta(days=1)
     return d.strftime("%Y-%m-%d")
 
 
 def _fetch_incr_fallback(item: dict, last_date: str) -> list[dict]:
     """增量备用：用 akshare / 备用数据源拉取 last_date 之后的数据。"""
     market, symbol = item["market"], item["symbol"]
+
+    # crypto 走 CoinGecko，按实际需要的天数拉取
+    if market == "crypto":
+        try:
+            gap_days = (datetime.now() - datetime.strptime(last_date, "%Y-%m-%d")).days + 5
+        except Exception:
+            gap_days = 30
+        all_data = fetch_crypto_kline(item, days=gap_days)
+        return [r for r in all_data if r["date"] > last_date]
+
     start = last_date.replace("-", "")
 
     # 先尝试 akshare 增量
@@ -726,14 +989,11 @@ def process_item(item: dict, incr_only: bool = False) -> dict:
     market = item["market"]
     out    = new_path(item)
 
-    if market == "crypto":
-        return {"name": name, "status": "skipped", "detail": "crypto暂不支持"}
-
     # ── 读取已有 newdata ──
     existing = load_json(out)
 
     # ── 检查是否需要增量 ──
-    last_td = get_last_trading_date()
+    last_td = get_last_trading_date(market)
     if existing:
         dates = [r["date"] for r in existing if r.get("date")]
         last_date = max(dates) if dates else ""
@@ -775,19 +1035,24 @@ def process_item(item: dict, incr_only: bool = False) -> dict:
     # ════════════════════════════
     added = 0
     if need_incr:
-        incr_records = fetch_stockdata_incr(item)
-        # stock-data CLI 不可用时，用 akshare/备用源拉最近数据作为增量
-        if not incr_records:
+        # crypto 不用 stock-data CLI，直接走 fallback（CoinGecko）
+        if market == "crypto":
             incr_records = _fetch_incr_fallback(item, last_date)
+        else:
+            incr_records = fetch_stockdata_incr(item)
+            # stock-data CLI 不可用时，用 akshare/备用源拉最近数据作为增量
+            if not incr_records:
+                incr_records = _fetch_incr_fallback(item, last_date)
         if incr_records:
             existing_dates = {r["date"] for r in existing}
             truly_new = [r for r in incr_records if r["date"] not in existing_dates]
 
             if truly_new:
-                # 为最新记录补 PE
-                pe_today = fetch_stockdata_pe(item)
-                if pe_today is not None:
-                    truly_new[-1]["pe"] = pe_today
+                # crypto 无 PE 概念，跳过 PE 补充
+                if market != "crypto":
+                    pe_today = fetch_stockdata_pe(item)
+                    if pe_today is not None:
+                        truly_new[-1]["pe"] = pe_today
 
                 existing = merge_by_date(existing, truly_new)
                 added = len(truly_new)
