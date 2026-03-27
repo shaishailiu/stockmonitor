@@ -1408,6 +1408,162 @@
       "market": "a",
       "symbol": "300751",
       "stock_type": "non_cyclical"
+    },
+    {
+      "name": "300251（光线传媒）",
+      "market": "a",
+      "symbol": "300251",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "688775（影石创新）",
+      "market": "a",
+      "symbol": "688775",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "301606（绿联科技）",
+      "market": "a",
+      "symbol": "301606",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "300533（冰川网络）",
+      "market": "a",
+      "symbol": "300533",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "002517（恺英网络）",
+      "market": "a",
+      "symbol": "002517",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "002558（巨人网络）",
+      "market": "a",
+      "symbol": "002558",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "002624（完美世界）",
+      "market": "a",
+      "symbol": "002624",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "603444（吉比特）",
+      "market": "a",
+      "symbol": "603444",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "002555（三七互娱）",
+      "market": "a",
+      "symbol": "002555",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "002174（游族网络）",
+      "market": "a",
+      "symbol": "002174",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "300315（掌趣科技）",
+      "market": "a",
+      "symbol": "300315",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "603258（电魂网络）",
+      "market": "a",
+      "symbol": "603258",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "00302（中手游）",
+      "market": "hk",
+      "symbol": "00302",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "01119（创梦天地）",
+      "market": "hk",
+      "symbol": "01119",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "00799（IGG）",
+      "market": "hk",
+      "symbol": "00799",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "00777（网龙）",
+      "market": "hk",
+      "symbol": "00777",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "02400（心动公司）",
+      "market": "hk",
+      "symbol": "02400",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "06820（友谊时光）",
+      "market": "hk",
+      "symbol": "06820",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "06633（青瓷游戏）",
+      "market": "hk",
+      "symbol": "06633",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "02660（禅游科技）",
+      "market": "hk",
+      "symbol": "02660",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "300002（神州泰岳）",
+      "market": "a",
+      "symbol": "300002",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "300866（安克创新）",
+      "market": "a",
+      "symbol": "300866",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "688169（石头科技）",
+      "market": "a",
+      "symbol": "688169",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "603486（科沃斯）",
+      "market": "a",
+      "symbol": "603486",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "689009（九号公司）",
+      "market": "a",
+      "symbol": "689009",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "688696（极米科技）",
+      "market": "a",
+      "symbol": "688696",
+      "stock_type": "cyclical"
     }
   ]
 }
