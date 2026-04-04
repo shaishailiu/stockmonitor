@@ -73,6 +73,354 @@
       "stock_type": "cyclical"
     },
     {
+      "name": "ADBE（Adobe）",
+      "market": "us",
+      "symbol": "105.ADBE",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "INTC（英特尔）",
+      "market": "us",
+      "symbol": "105.INTC",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "NFLX（奈飞）",
+      "market": "us",
+      "symbol": "105.NFLX",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "TEAM（Atlassian）",
+      "market": "us",
+      "symbol": "105.TEAM",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "NET（Cloudflare）",
+      "market": "us",
+      "symbol": "106.NET",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "MDB（MongoDB）",
+      "market": "us",
+      "symbol": "105.MDB",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "ORCL（甲骨文）",
+      "market": "us",
+      "symbol": "106.ORCL",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "UBER（优步）",
+      "market": "us",
+      "symbol": "106.UBER",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "SPOT（Spotify）",
+      "market": "us",
+      "symbol": "106.SPOT",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "MU（美光）",
+      "market": "us",
+      "symbol": "105.MU",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "EA（艺电）",
+      "market": "us",
+      "symbol": "105.EA",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "SONY（索尼）",
+      "market": "us",
+      "symbol": "106.SONY",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "DELL（戴尔）",
+      "market": "us",
+      "symbol": "106.DELL",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "WDC（西部数据）",
+      "market": "us",
+      "symbol": "105.WDC",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "STX（希捷）",
+      "market": "us",
+      "symbol": "105.STX",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "NKE（耐克）",
+      "market": "us",
+      "symbol": "106.NKE",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "SBUX（星巴克）",
+      "market": "us",
+      "symbol": "105.SBUX",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "MCD（麦当劳）",
+      "market": "us",
+      "symbol": "106.MCD",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "KO（可口可乐）",
+      "market": "us",
+      "symbol": "106.KO",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "PEP（百事可乐）",
+      "market": "us",
+      "symbol": "105.PEP",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "PG（宝洁）",
+      "market": "us",
+      "symbol": "106.PG",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "JNJ（强生）",
+      "market": "us",
+      "symbol": "106.JNJ",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "COST（开市客）",
+      "market": "us",
+      "symbol": "105.COST",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "DIS（迪士尼）",
+      "market": "us",
+      "symbol": "106.DIS",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "ABNB（爱彼迎）",
+      "market": "us",
+      "symbol": "105.ABNB",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "BKNG（Booking）",
+      "market": "us",
+      "symbol": "105.BKNG",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "LULU（Lululemon）",
+      "market": "us",
+      "symbol": "105.LULU",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "ADDYY（阿迪达斯）",
+      "market": "us",
+      "symbol": "105.ADDYY",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "PFE（辉瑞）",
+      "market": "us",
+      "symbol": "106.PFE",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "PYPL（PayPal）",
+      "market": "us",
+      "symbol": "105.PYPL",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "V（Visa）",
+      "market": "us",
+      "symbol": "106.V",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "MA（万事达）",
+      "market": "us",
+      "symbol": "106.MA",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "ZM（Zoom）",
+      "market": "us",
+      "symbol": "105.ZM",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "SNAP（Snapchat）",
+      "market": "us",
+      "symbol": "106.SNAP",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "YUM（百胜集团）",
+      "market": "us",
+      "symbol": "106.YUM",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "MDLZ（亿滋国际）",
+      "market": "us",
+      "symbol": "105.MDLZ",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "MAR（万豪国际）",
+      "market": "us",
+      "symbol": "105.MAR",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "HLT（希尔顿）",
+      "market": "us",
+      "symbol": "106.HLT",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "WBD（华纳兄弟探索）",
+      "market": "us",
+      "symbol": "105.WBD",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "CMCSA（康卡斯特）",
+      "market": "us",
+      "symbol": "105.CMCSA",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "PARA（派拉蒙）",
+      "market": "us",
+      "symbol": "105.PARA",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "UAA（安德玛）",
+      "market": "us",
+      "symbol": "106.UAA",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "SKX（斯凯奇）",
+      "market": "us",
+      "symbol": "106.SKX",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "DECK（Deckers）",
+      "market": "us",
+      "symbol": "106.DECK",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "CL（高露洁）",
+      "market": "us",
+      "symbol": "106.CL",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "TPR（Tapestry）",
+      "market": "us",
+      "symbol": "106.TPR",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "QSR（汉堡王母公司）",
+      "market": "us",
+      "symbol": "106.QSR",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "GIS（通用磨坊）",
+      "market": "us",
+      "symbol": "106.GIS",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "EBAY（eBay）",
+      "market": "us",
+      "symbol": "105.EBAY",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "FDX（联邦快递）",
+      "market": "us",
+      "symbol": "106.FDX",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "UPS（联合包裹）",
+      "market": "us",
+      "symbol": "106.UPS",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "HPQ（惠普）",
+      "market": "us",
+      "symbol": "106.HPQ",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "LOGI（罗技）",
+      "market": "us",
+      "symbol": "105.LOGI",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "CRSR（海盗船）",
+      "market": "us",
+      "symbol": "105.CRSR",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "WMT（沃尔玛）",
+      "market": "us",
+      "symbol": "106.WMT",
+      "stock_type": "non_cyclical"
+    },
+    {
+      "name": "DE（约翰迪尔）",
+      "market": "us",
+      "symbol": "106.DE",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "CAT（卡特彼勒）",
+      "market": "us",
+      "symbol": "106.CAT",
+      "stock_type": "cyclical"
+    },
+    {
+      "name": "UNH（联合健康）",
+      "market": "us",
+      "symbol": "106.UNH",
+      "stock_type": "non_cyclical"
+    },
+    {
       "name": "600519（贵州茅台）",
       "market": "a",
       "symbol": "600519",
