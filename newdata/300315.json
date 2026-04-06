@@ -29928,5 +29928,25 @@
     "volume": 63201000.0,
     "amount": 308274892.0,
     "pe": -1559.12
+  },
+  {
+    "date": "2026-04-02",
+    "open": 4.88,
+    "high": 4.88,
+    "low": 4.75,
+    "close": 4.78,
+    "volume": 57210600.0,
+    "amount": null,
+    "pe": null
+  },
+  {
+    "date": "2026-04-03",
+    "open": 4.8,
+    "high": 4.82,
+    "low": 4.63,
+    "close": 4.63,
+    "volume": 48353650.0,
+    "amount": null,
+    "pe": null
   }
 ]

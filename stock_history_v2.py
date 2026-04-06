@@ -6,6 +6,7 @@
                合并写入 newdata/{symbol}.json
   2. akshare兜底: 若 data/ 无数据，用 akshare 拉全量历史 K 线
                + 东方财富 EPS 计算 PE(TTM) 写入 newdata/
+               ★ 美股优先使用 yfinance（走 Yahoo Finance），akshare 作为后备
   3. 增量更新  : 每次运行时，用 stock-data CLI 补充最新 N 条 K 线
                + quote 接口写入最新交易日的 PE
 
@@ -22,7 +23,6 @@ import json
 import os
 import subprocess
 import time
-import traceback
 from datetime import datetime, timedelta
 
 import akshare as ak
@@ -190,8 +190,8 @@ def fetch_akshare_kline(item: dict) -> list[dict]:
             })
         return records
 
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        print(f"    ⚠️  akshare K线拉取失败: {type(e).__name__}: {e}")
         return []
 
 
@@ -350,13 +350,23 @@ def calc_pe_series(quarterly_eps: list[dict], records: list[dict]) -> list[dict]
 
 
 def fetch_full_with_pe(item: dict) -> list[dict]:
-    """层2：akshare 拉历史 K 线 + 东方财富计算 PE，返回完整记录。
-    如果 akshare 失败，自动切换到备用数据源（腾讯/新浪/东方财富HTTP）。
+    """层2：拉历史 K 线 + 东方财富计算 PE，返回完整记录。
+    美股优先 yfinance → akshare → 备用数据源。
+    其他市场：akshare → 备用数据源（腾讯/新浪/东方财富HTTP）。
     crypto 不计算 PE。
     """
-    records = fetch_akshare_kline(item)
+    records = []
 
-    # akshare 失败 → 备用数据源
+    # 美股优先走 yfinance
+    if item["market"] == "us":
+        print(f"    [INFO] 美股优先使用 yfinance...")
+        records = fetch_yfinance_us_kline(item)
+
+    # yfinance 失败或非美股 → akshare
+    if not records:
+        records = fetch_akshare_kline(item)
+
+    # akshare 也失败 → 备用数据源
     if not records:
         print(f"    ⚠️  akshare 失败，尝试备用数据源...")
         records = fetch_backup_kline(item)
@@ -470,8 +480,8 @@ def _fetch_coingecko_kline(item: dict, days: int = 365) -> list[dict]:
             print(f"    [OK] CoinGecko 成功获取 {len(records)} 条日线（请求 {days} 天）")
         return records
 
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        print(f"    ⚠️  CoinGecko 拉取失败: {type(e).__name__}: {e}")
         return []
 
 
@@ -544,8 +554,8 @@ def _fetch_binance_kline(item: dict) -> list[dict]:
             start_ms = int(data[-1][6]) + 1
             time.sleep(0.3)
 
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        print(f"    ⚠️  Binance 拉取失败: {type(e).__name__}: {e}")
 
     if all_records:
         seen = {}
@@ -608,6 +618,60 @@ def _fetch_yfinance_kline(item: dict) -> list[dict]:
 
     except Exception as e:
         print(f"    [WARN] yfinance 失败: {e}")
+        return []
+
+
+# ══════════════════════════════════════════
+#  美股专用：yfinance（Yahoo Finance）
+# ══════════════════════════════════════════
+
+def fetch_yfinance_us_kline(item: dict, start_date: str | None = None) -> list[dict]:
+    """美股专用：通过 yfinance（Yahoo Finance）拉取历史日线。
+
+    yfinance 走 Yahoo Finance 接口，需要科学上网。
+    start_date: 可选，YYYY-MM-DD 格式，如果指定则只拉 start_date 之后的数据。
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        print("    [WARN] yfinance 未安装，跳过（pip install yfinance）")
+        return []
+
+    # 从 symbol "105.ADBE" 中提取 ticker "ADBE"
+    ticker = item["symbol"].split(".")[-1]
+    try:
+        t = yf.Ticker(ticker)
+        if start_date:
+            df = t.history(start=start_date)
+        else:
+            df = t.history(period="max")
+
+        if df is None or df.empty:
+            print(f"    [WARN] yfinance 返回空数据 ({ticker})")
+            return []
+
+        records = []
+        for idx, row in df.iterrows():
+            date_str = idx.strftime("%Y-%m-%d")
+            if start_date and date_str <= start_date:
+                continue
+            records.append({
+                "date":   date_str,
+                "open":   _to_float(row.get("Open")),
+                "high":   _to_float(row.get("High")),
+                "low":    _to_float(row.get("Low")),
+                "close":  _to_float(row.get("Close")),
+                "volume": _to_float(row.get("Volume")),
+                "amount": 0,
+                "pe":     None,
+            })
+
+        if records:
+            print(f"    ✅ yfinance 成功获取 {len(records)} 条美股日线 ({ticker})")
+        return records
+
+    except Exception as e:
+        print(f"    ⚠️  yfinance 美股拉取失败 ({ticker}): {type(e).__name__}: {e}")
         return []
 
 
@@ -682,8 +746,8 @@ def fetch_tencent_kline(item: dict) -> list[dict]:
         if records:
             print(f"    ✅ 腾讯财经成功获取 {len(records)} 条日线")
         return records
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        print(f"    ⚠️  腾讯财经拉取失败: {type(e).__name__}: {e}")
         return []
 
 
@@ -726,16 +790,16 @@ def fetch_eastmoney_kline(item: dict) -> list[dict]:
         resp = cf_requests.get(url, params=params, headers=headers,
                                impersonate="chrome", timeout=20)
         data = resp.json()
-    except Exception:
-        pass
+    except Exception as e:
+        pass  # curl_cffi 不可用，回退 requests
 
     # 回退 requests
     if not data:
         try:
             resp = requests.get(url, params=params, headers=headers, timeout=20)
             data = resp.json()
-        except Exception:
-            traceback.print_exc()
+        except Exception as e:
+            print(f"    ⚠️  东方财富HTTP拉取失败: {type(e).__name__}: {e}")
             return []
 
     try:
@@ -763,8 +827,8 @@ def fetch_eastmoney_kline(item: dict) -> list[dict]:
         if records:
             print(f"    ✅ 东方财富HTTP成功获取 {len(records)} 条日线")
         return records
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        print(f"    ⚠️  东方财富HTTP数据解析失败: {type(e).__name__}: {e}")
         return []
 
 
@@ -809,19 +873,26 @@ def fetch_sina_kline(item: dict) -> list[dict]:
         if records:
             print(f"    ✅ 新浪财经成功获取 {len(records)} 条日线")
         return records
-    except Exception:
-        traceback.print_exc()
+    except Exception as e:
+        print(f"    ⚠️  新浪财经拉取失败: {type(e).__name__}: {e}")
         return []
 
 
 def fetch_backup_kline(item: dict) -> list[dict]:
-    """按优先级尝试备用数据源：腾讯 → 东方财富HTTP → 新浪。
-    加密货币直接走 CoinGecko API。
+    """按优先级尝试备用数据源。
+    美股：yfinance → 腾讯 → 东方财富HTTP。
+    A股：腾讯 → 东方财富HTTP → 新浪。
+    港股：腾讯 → 东方财富HTTP。
+    加密货币：CoinGecko API。
     """
     if item["market"] == "crypto":
         return fetch_crypto_kline(item)
 
-    sources = [
+    sources = []
+    if item["market"] == "us":
+        # 美股优先 yfinance（走 Yahoo Finance）
+        sources.append(("yfinance", fetch_yfinance_us_kline))
+    sources += [
         ("腾讯财经", fetch_tencent_kline),
         ("东方财富HTTP", fetch_eastmoney_kline),
         ("新浪财经", fetch_sina_kline),
@@ -921,7 +992,10 @@ def get_last_trading_date(market: str = "a") -> str:
 
 
 def _fetch_incr_fallback(item: dict, last_date: str) -> list[dict]:
-    """增量备用：用 akshare / 备用数据源拉取 last_date 之后的数据。"""
+    """增量备用：拉取 last_date 之后的数据。
+    美股优先 yfinance → akshare → 备用数据源。
+    其他市场：akshare → 备用数据源。
+    """
     market, symbol = item["market"], item["symbol"]
 
     # crypto 走 CoinGecko，按实际需要的天数拉取
@@ -933,9 +1007,16 @@ def _fetch_incr_fallback(item: dict, last_date: str) -> list[dict]:
         all_data = fetch_crypto_kline(item, days=gap_days)
         return [r for r in all_data if r["date"] > last_date]
 
+    # ★ 美股优先走 yfinance 增量
+    if market == "us":
+        print(f"    [INFO] 美股增量优先使用 yfinance...")
+        records = fetch_yfinance_us_kline(item, start_date=last_date)
+        if records:
+            return [r for r in records if r["date"] > last_date]
+
     start = last_date.replace("-", "")
 
-    # 先尝试 akshare 增量
+    # 尝试 akshare 增量
     try:
         if market == "a":
             df = ak.stock_zh_a_hist(symbol=symbol, period="daily",
@@ -985,6 +1066,15 @@ def _fetch_incr_fallback(item: dict, last_date: str) -> list[dict]:
 # ══════════════════════════════════════════
 
 def process_item(item: dict, incr_only: bool = False) -> dict:
+    name   = item["name"]
+    try:
+        return _process_item_inner(item, incr_only)
+    except Exception as e:
+        return {"name": name, "status": "failed",
+                "detail": f"未预期的异常: {type(e).__name__}: {e}"}
+
+
+def _process_item_inner(item: dict, incr_only: bool = False) -> dict:
     name   = item["name"]
     market = item["market"]
     out    = new_path(item)
@@ -1083,9 +1173,33 @@ def load_config() -> list[dict]:
         return json.load(f)["stocks"]
 
 
-def run_update(incr_only: bool = False) -> str:
+def _match_filter(item: dict, filters: list[str]) -> bool:
+    """判断股票是否匹配任一过滤关键词（不区分大小写，匹配 name 或 symbol）"""
+    name_lower = item.get("name", "").lower()
+    symbol_lower = item.get("symbol", "").lower()
+    for f in filters:
+        f_lower = f.lower()
+        if f_lower in name_lower or f_lower in symbol_lower:
+            return True
+    return False
+
+
+def run_update(incr_only: bool = False, filters: list[str] | None = None) -> str:
     os.makedirs(NEW_DATA_DIR, exist_ok=True)
     config = load_config()
+
+    # 如果指定了过滤条件，只处理匹配的股票
+    if filters:
+        matched = [item for item in config if _match_filter(item, filters)]
+        if not matched:
+            msg = f"[stock_history_v2] 未找到匹配 {filters} 的股票"
+            print(msg)
+            return msg
+        print(f"[stock_history_v2] 过滤模式，匹配到 {len(matched)} 只股票：")
+        for item in matched:
+            print(f"  → {item['name']} ({item['symbol']})")
+        print()
+        config = matched
 
     updated, skipped, failed = [], [], []
 
@@ -1117,5 +1231,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--incr", action="store_true",
                         help="仅增量更新，跳过迁移/akshare全量拉取")
+    parser.add_argument("--filter", nargs="+", metavar="关键词",
+                        help="只更新匹配的股票（支持名称/代码，不区分大小写，可指定多个）")
     args = parser.parse_args()
-    run_update(incr_only=args.incr)
+    run_update(incr_only=args.incr, filters=args.filter)
