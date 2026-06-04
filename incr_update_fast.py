@@ -11,8 +11,8 @@ import re
 import requests
 from datetime import datetime, timedelta
 
-NEW_DATA_DIR = "/root/.openclaw/workspace/newdata"
-CONFIG_FILE = "/root/.openclaw/workspace/config.json"
+NEW_DATA_DIR = "newdata"
+CONFIG_FILE = "config.json"
 TARGET_DATE = "2026-04-24"
 
 def load_config():

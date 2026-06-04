@@ -79,7 +79,7 @@ def run_update() -> str:
     print(f"[{datetime.now():%H:%M:%S}] 开始增量更新数据...")
     try:
         result = subprocess.run(
-            [sys.executable, "-X", "utf8", HISTORY_SCRIPT, "--incr"],
+            [sys.executable, "-X", "utf8", HISTORY_SCRIPT],
             cwd=SCRIPT_DIR,
             capture_output=True,
             text=True,

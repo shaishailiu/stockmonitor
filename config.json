@@ -365,23 +365,9 @@
       "sector": "gaming"
     },
     {
-      "name": "PARA（派拉蒙）",
-      "market": "us",
-      "symbol": "105.PARA",
-      "stock_type": "cyclical",
-      "sector": "gaming"
-    },
-    {
       "name": "UAA（安德玛）",
       "market": "us",
       "symbol": "106.UAA",
-      "stock_type": "cyclical",
-      "sector": "consumer"
-    },
-    {
-      "name": "SKX（斯凯奇）",
-      "market": "us",
-      "symbol": "106.SKX",
       "stock_type": "cyclical",
       "sector": "consumer"
     },
