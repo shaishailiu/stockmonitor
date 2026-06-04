@@ -431,22 +431,27 @@ def analyze(item: dict) -> dict | None:
         if rsi_ok or w_rsi_ok:
             triggered_level = (max_ratio, rsi_cap, w_rsi_cap, emoji, level_name)
             break
-    if triggered_level is None:
-        return None
 
-    max_ratio_t, rsi_cap_t, w_rsi_cap_t, emoji, level_name = triggered_level
+    triggered = triggered_level is not None
 
-    # ── 构造触发原因 ──
-    reason_parts = [f"回撤{drop_pct}%"]
-    if rsi_14 is not None and rsi_14 <= rsi_cap_t:
-        reason_parts.append(f"日线RSI({rsi_14})<{rsi_cap_t}")
-    if weekly_rsi is not None and weekly_rsi <= w_rsi_cap_t:
-        reason_parts.append(f"周线RSI({weekly_rsi})<{w_rsi_cap_t}")
-    if macd_divergence:
-        reason_parts.append("MACD底背离")
-    if boll_below:
-        reason_parts.append("跌破布林带下轨")
-    reason = " + ".join(reason_parts)
+    if triggered:
+        max_ratio_t, rsi_cap_t, w_rsi_cap_t, emoji, level_name = triggered_level
+
+        # ── 构造触发原因 ──
+        reason_parts = [f"回撤{drop_pct}%"]
+        if rsi_14 is not None and rsi_14 <= rsi_cap_t:
+            reason_parts.append(f"日线RSI({rsi_14})<{rsi_cap_t}")
+        if weekly_rsi is not None and weekly_rsi <= w_rsi_cap_t:
+            reason_parts.append(f"周线RSI({weekly_rsi})<{w_rsi_cap_t}")
+        if macd_divergence:
+            reason_parts.append("MACD底背离")
+        if boll_below:
+            reason_parts.append("跌破布林带下轨")
+        reason = " + ".join(reason_parts)
+    else:
+        emoji = "⬜"
+        level_name = "未触发"
+        reason = ""
 
     # ──────────────────────────────────────
     #  四维综合评分（满分100）
@@ -540,6 +545,8 @@ def analyze(item: dict) -> dict | None:
         "name": item["name"],
         "market": item["market"],
         "symbol": item["symbol"],
+        "sector": item.get("sector", ""),
+        "triggered": triggered,
         "latest_date": latest_date,
         "current_price": round(current_price, 2),
         "high_52w": round(stage_high, 2),
@@ -645,37 +652,77 @@ def format_card(s: dict) -> str:
     return buf.getvalue()
 
 
-def generate_report() -> str:
+def format_card_compact(s: dict) -> str:
+    """精简模式：仅头信息 + 价格信息。"""
+    buf = io.StringIO()
+    currency = get_currency_symbol(s["market"])
+
+    name_link = make_link(s["name"], s)
+    buf.write(f"{s['emoji']} {s['level_name']} {name_link} (评分{s['score']})\n")
+
+    # 价格信息（一行）
+    current_pe_str = f"(PE{s['current_pe']})" if s.get('current_pe') is not None else ""
+    peak_date_str = f"({s['peak_date']})" if s.get('peak_date') else ""
+    line = f"  · 当前价 {currency}{s['current_price']}{current_pe_str} | 高点 {currency}{s['high_52w']}{peak_date_str} | 回撤 {s['drop_pct']}%\n"
+    buf.write(line)
+
+    return buf.getvalue()
+
+
+def generate_report(sector_include: set | None = None, sector_exclude: set | None = None, sector_label: str = "", compact: bool = False) -> str:
+    """生成报告。
+    sector_include: 只包含这些 sector（为 None 则不限制）
+    sector_exclude: 排除这些 sector（为 None 则不排除）
+    sector_label: 显示在报告顶部的板块标题
+    compact: 精简模式，仅显示头信息和价格
+    """
     config = load_config()
     blocked = load_block_symbols()
-    results = []
+    all_analyzed = []  # 所有分析结果（含未触发的）
     all_drops = []  # 所有股票的回撤数据
 
     for item in config:
         if item["symbol"] in blocked:
             continue
+        # ── 板块过滤 ──
+        sector = item.get("sector", "")
+        if sector_include is not None and sector not in sector_include:
+            continue
+        if sector_exclude is not None and sector in sector_exclude:
+            continue
         # 计算基础回撤数据
         drop_info = calc_drop_info(item)
         if drop_info:
             all_drops.append(drop_info)
-        # 完整分析（触发阈值的）
+        # 完整分析
         r = analyze(item)
         if r:
-            results.append(r)
+            all_analyzed.append(r)
+
+    # 区分触发与未触发
+    triggered_results = [r for r in all_analyzed if r.get("triggered")]
 
     buf = io.StringIO()
 
+    # 板块标题
+    if sector_label:
+        buf.write(f"## {sector_label}\n\n")
+
     # 触发阈值的卡片
-    if results:
-        results.sort(key=lambda x: -x["score"])
-        cards = [format_card(s) for s in results]
-        buf.write(("\n" + "─" * 40 + "\n\n").join(cards))
+    if triggered_results:
+        triggered_results.sort(key=lambda x: -x["score"])
+        fmt = format_card_compact if compact else format_card
+        cards = [fmt(s) for s in triggered_results]
+        sep = "\n\n" if compact else "\n" + "─" * 40 + "\n\n"
+        buf.write(sep.join(cards))
 
     # 回撤超过25%的表格
     drop_40 = [d for d in all_drops if d["drop_pct"] >= 25]
     if drop_40:
         drop_40.sort(key=lambda x: -x["drop_pct"])
-        if results:
+        # 构建 symbol → score 映射（使用全部分析结果）
+        score_map = {r["symbol"]: r["score"] for r in all_analyzed}
+        if triggered_results:
             buf.write("\n\n")
         buf.write("回撤超过25%的股票一览\n\n")
         # 计算名字列的显示宽度（中文算2，英文算1）
@@ -687,20 +734,19 @@ def generate_report() -> str:
 
         col_w = 22  # 名字列目标显示宽度
         header_pad = " " * (col_w - display_width("股票"))
-        buf.write(f"  股票{header_pad} {'当前价':>10s} {'阶段高点':>10s} {'回撤':>8s}\n")
-        buf.write(f"  {'─' * (col_w // 2)}  {'─' * 10} {'─' * 10} {'─' * 8}\n")
+        buf.write(f"  股票{header_pad} {'当前价':>10s} {'阶段高点':>10s} {'回撤':>8s} {'评分':>6s}\n")
+        buf.write(f"  {'─' * (col_w // 2)}  {'─' * 10} {'─' * 10} {'─' * 8} {'─' * 6}\n")
         for d in drop_40:
             cur = get_currency_symbol(d["market"])
             name_link = make_link(d["name"], d)
-            # 补齐：目标宽度 - 显示名宽度 = 需要额外补的空格（链接部分不显示）
             name_dw = display_width(d["name"])
-            pad = " " * (col_w - name_dw + len(name_link) - len(name_link))
-            # 链接字符串比显示名长，需要减少format的宽度
             extra = len(name_link) - name_dw
             total_pad = col_w + extra
-            buf.write(f"  {name_link:<{total_pad}s} {cur}{d['current_price']:>8.2f} {cur}{d['high_52w']:>8.2f} {d['drop_pct']:>7.1f}%\n")
+            score = score_map.get(d["symbol"], "-")
+            score_str = str(score) if isinstance(score, int) else score
+            buf.write(f"  {name_link:<{total_pad}s} {cur}{d['current_price']:>8.2f} {cur}{d['high_52w']:>8.2f} {d['drop_pct']:>7.1f}% {score_str:>6s}\n")
 
-    if not results and not drop_40:
+    if not triggered_results and not drop_40:
         buf.write(f"✅ 当前没有股票触发预警，也没有回撤超过25%的股票。\n")
         buf.write(f"   监控的股票数量：{len(config)} | 有回撤数据的：{len(all_drops)}\n")
         if all_drops:
@@ -753,6 +799,7 @@ def calc_drop_info(item: dict) -> dict | None:
         "name": item["name"],
         "market": item["market"],
         "symbol": item["symbol"],
+        "sector": item.get("sector", ""),
         "current_price": round(current_price, 2),
         "high_52w": round(stage_high, 2),
         "peak_date": cycle_info["peak_date"],
@@ -763,9 +810,91 @@ def calc_drop_info(item: dict) -> dict | None:
 
 
 def main() -> str:
-    """生成报告，打印并返回。"""
-    report: str = generate_report()
-    print(report, end="")
+    """生成报告，打印并返回。支持 --output 和 --sector/--exclude 参数。"""
+    import argparse
+
+    HELP_EPILOG = """\
+快捷分组（--sector / -s 参数）:
+  G          🎮 游戏行业 → gaming
+  T          💻 科技行业 → tech, chip_ai
+  O          📊 其他行业 → consumer, finance, healthcare, resources_industrial, auto_energy
+
+所有可用 sector 值（可逗号组合）:
+  gaming, tech, chip_ai, consumer, finance,
+  healthcare, resources_industrial, auto_energy
+
+用法示例:
+  python stock_monitor_v2.py -s G -o r.txt             只看游戏
+  python stock_monitor_v2.py -s T -o r.txt             只看科技(含芯片AI)
+  python stock_monitor_v2.py -s O -o r.txt             只看其他
+  python stock_monitor_v2.py -s consumer,finance       自定义组合
+  python stock_monitor_v2.py -e gaming -o r.txt        全部但排除游戏
+  python stock_monitor_v2.py -s all -o r.txt           全部
+  python stock_monitor_v2.py -s T -c -o r.txt          精简模式
+
+详细说明见 SECTORS.md
+"""
+
+    parser = argparse.ArgumentParser(
+        description="股票底部信号监控报告",
+        epilog=HELP_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--output", "-o", type=str, help="输出到指定文件（UTF-8编码）")
+    parser.add_argument("--sector", "-s", type=str, default=None,
+                        help="只包含指定板块。快捷名: G=游戏, T=科技, O=其他, all=全部；或逗号分隔sector值")
+    parser.add_argument("--exclude", "-e", type=str, default=None,
+                        help="排除指定板块，逗号分隔。如：gaming")
+    parser.add_argument("--compact", "-c", action="store_true",
+                        help="精简模式：仅显示头信息和价格，省略技术指标和评分明细")
+    args = parser.parse_args()
+
+    # 无任何参数时直接输出 help
+    import sys
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
+    # 预设分组快捷名（大小写不敏感）
+    PRESETS = {
+        "G": {"include": {"gaming"}, "label": "🎮 游戏行业"},
+        "T": {"include": {"tech", "chip_ai"}, "label": "💻 科技行业"},
+        "O": {"exclude": {"gaming", "tech", "chip_ai"}, "label": "📊 其他行业"},
+        "all": {"include": None, "label": ""},
+    }
+
+    sector_include = None
+    sector_exclude = None
+    sector_label = ""
+
+    if args.sector:
+        # 检查是否匹配预设名（大小写不敏感）
+        sector_key = args.sector.upper() if len(args.sector) == 1 else args.sector
+        if sector_key in PRESETS:
+            preset = PRESETS[sector_key]
+            sector_include = preset.get("include")
+            sector_exclude = preset.get("exclude")
+            sector_label = preset["label"]
+        else:
+            sector_include = set(args.sector.split(","))
+            sector_label = f"📋 板块：{args.sector}"
+
+    if args.exclude:
+        sector_exclude = set(args.exclude.split(","))
+        if not sector_label:
+            sector_label = f"📋 排除：{args.exclude}"
+
+    report: str = generate_report(sector_include=sector_include, sector_exclude=sector_exclude, sector_label=sector_label, compact=args.compact)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(report)
+        print(f"报告已写入: {args.output}")
+    else:
+        import sys, io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+        print(report, end="")
+
     return report
 
 
